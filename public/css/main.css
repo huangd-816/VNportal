@@ -493,3 +493,62 @@ body:has(.player-bar.visible) .main-content{padding-bottom:calc(var(--player-h) 
 /* Fix: game containers always start hidden */
 .game-container { display: none; }
 .game-container:not(.hidden) { display: inline-block; }
+
+/* ==========================================
+   FIXES — 2048, Cover canvas, Cover label
+   ========================================== */
+
+/* Remove white canvas background */
+#coverCanvas { background: transparent !important; }
+
+/* Cover vinyl label */
+#coverVinylLabel {
+  font-size: .65rem; color: var(--accent);
+  letter-spacing: .15em; text-transform: uppercase;
+  margin-left: auto; padding: .3rem .75rem;
+  border: 1px solid rgba(245,197,24,.3);
+}
+
+/* 2048 — single clean grid */
+.g2048-board {
+  display: grid;
+  grid-template-columns: repeat(4, 110px);
+  grid-template-rows:    repeat(4, 110px);
+  gap: 8px;
+  background: #111;
+  padding: 8px;
+  border: 1px solid var(--border);
+  width: fit-content;
+}
+.g2048-cell {
+  width: 110px; height: 110px;
+  display: flex; align-items: center; justify-content: center;
+  border-radius: 3px;
+  position: relative; overflow: hidden;
+  transition: transform .1s ease, opacity .15s ease;
+  background: #1a1a1a;
+}
+.g2048-cell.g2048-empty { background: #161616; }
+.g2048-label {
+  position: relative; z-index: 2;
+  font-family: var(--font-d);
+  font-size: 1.6rem;
+  letter-spacing: .05em;
+  color: var(--text);
+  text-shadow: 0 1px 6px rgba(0,0,0,.9);
+  pointer-events: none;
+}
+.g2048-cell[data-val="2"] .g2048-label,
+.g2048-cell[data-val="4"] .g2048-label { color: #555; }
+
+/* 2048 win overlay */
+.g2048-overlay {
+  position: absolute; inset: 0;
+  background: rgba(0,0,0,.85);
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  gap: .75rem; z-index: 20;
+}
+.g2048-win-title { font-family: var(--font-d); font-size: 3rem; color: var(--accent); letter-spacing: .1em; }
+.g2048-win-sub   { font-size: .85rem; color: var(--text-dim); }
+.g2048-win-img   { width: 160px; height: 160px; object-fit: cover; border-radius: 50%; border: 2px solid var(--accent); }
