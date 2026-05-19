@@ -1,58 +1,55 @@
 // ============================================
-// VNportal — App Router & Init
+// VNportal — App Router
 // ============================================
 
 const App = (() => {
-  let currentPage = 'exhibit';
+  let current = 'exhibit';
 
   function navigate(page) {
-    // Deactivate all pages
     document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
     document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-
-    // Activate target
     const pageEl = document.getElementById(`page-${page}`);
     const navEl  = document.querySelector(`[data-page="${page}"]`);
     if (pageEl) pageEl.classList.add('active');
     if (navEl)  navEl.classList.add('active');
+    current = page;
 
-    currentPage = page;
-
-    // Page-specific hooks
-    if (page === 'exhibit') Exhibit.render();
-    if (page === 'cover') {
-      const vinyl = Store.getCurrentVinyl();
-      if (vinyl) Cover.loadCover(vinyl.id);
-    }
+    // Page lifecycle hooks
+    if (page === 'exhibit')       Exhibit.render();
+    if (page === 'cover')         Cover.onShow();
+    if (page === 'mix')           DJMix.onShow();
   }
 
   function init() {
-    // Wire nav
     document.querySelectorAll('.nav-item').forEach(link => {
-      link.addEventListener('click', e => {
-        e.preventDefault();
-        navigate(link.dataset.page);
-      });
+      link.addEventListener('click', e => { e.preventDefault(); navigate(link.dataset.page); });
     });
 
-    // Init modules
+    // Init all modules
     Exhibit.init();
     Build.init();
     Cover.init();
+    VinylSearch.init();
     Snake.init();
+    Game2048.init();
+    DJMix.init();
+    Player.initUI();
+    Spotify.init();
 
-    // Start on exhibit
     navigate('exhibit');
 
-    // Load current vinyl into now-playing if exists
+    // Restore now-playing
     const vinyl = Store.getCurrentVinyl();
-    if (vinyl && vinyl.tracks?.length) {
+    if (vinyl?.tracks?.length) {
       document.getElementById('npTitle').textContent  = vinyl.tracks[0].title;
       document.getElementById('npArtist').textContent = vinyl.tracks[0].artist;
     }
+
+    // Button to add vinyl from exhibit → go to search or build
+    document.getElementById('addVinylBtn').addEventListener('click', () => navigate('search-vinyl'));
   }
 
-  return { init, navigate };
+  return { init, navigate, current: () => current };
 })();
 
 document.addEventListener('DOMContentLoaded', App.init);
