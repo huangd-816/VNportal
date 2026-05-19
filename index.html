@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>VNportal — Your Vinyl Universe</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Mono:ital,wght@0,300;0,400;1,300&family=Playfair+Display:ital@1&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="public/css/main.css" />
+</head>
+<body>
+
+  <!-- NOISE OVERLAY -->
+  <div class="noise"></div>
+
+  <!-- SIDEBAR NAV -->
+  <nav class="sidebar">
+    <div class="logo">VN<span>portal</span></div>
+    <ul class="nav-links">
+      <li><a href="#" class="nav-item active" data-page="exhibit">
+        <span class="nav-icon">◈</span> Exhibit
+      </a></li>
+      <li><a href="#" class="nav-item" data-page="build">
+        <span class="nav-icon">◉</span> Build Vinyl
+      </a></li>
+      <li><a href="#" class="nav-item" data-page="cover">
+        <span class="nav-icon">◫</span> DIY Cover
+      </a></li>
+      <li><a href="#" class="nav-item" data-page="mix">
+        <span class="nav-icon">◎</span> DJ Mix
+      </a></li>
+      <li><a href="#" class="nav-item" data-page="games">
+        <span class="nav-icon">◐</span> Games
+      </a></li>
+      <li><a href="#" class="nav-item" data-page="popular">
+        <span class="nav-icon">◑</span> Popular
+      </a></li>
+    </ul>
+    <div class="sidebar-now-playing" id="nowPlaying">
+      <div class="np-disc spinning" id="npDisc"></div>
+      <div class="np-info">
+        <div class="np-title" id="npTitle">No track playing</div>
+        <div class="np-artist" id="npArtist">—</div>
+      </div>
+    </div>
+  </nav>
+
+  <!-- MAIN CONTENT -->
+  <main class="main-content" id="mainContent">
+
+    <!-- EXHIBIT PAGE -->
+    <section class="page active" id="page-exhibit">
+      <div class="page-header">
+        <h1 class="page-title">Your <em>Exhibit</em></h1>
+        <p class="page-sub">Your personal vinyl gallery</p>
+        <button class="btn-primary" id="addVinylBtn">+ Press New Vinyl</button>
+      </div>
+      <div class="vinyl-grid" id="vinylGrid">
+        <!-- Vinyl cards injected by JS -->
+      </div>
+      <div class="empty-state" id="emptyState">
+        <div class="empty-disc">◎</div>
+        <p>Your exhibit is empty.<br/>Press your first vinyl to begin.</p>
+      </div>
+    </section>
+
+    <!-- BUILD VINYL PAGE -->
+    <section class="page" id="page-build">
+      <div class="page-header">
+        <h1 class="page-title">Press a <em>Vinyl</em></h1>
+        <p class="page-sub">Curate your tracks, name your record</p>
+      </div>
+      <div class="build-container">
+        <div class="build-form">
+          <div class="form-group">
+            <label>Vinyl Name</label>
+            <input type="text" id="vinylName" placeholder="e.g. Late Night Sessions" />
+          </div>
+          <div class="form-group">
+            <label>Genre / Mood</label>
+            <select id="vinylGenre">
+              <option value="jazz">Jazz</option>
+              <option value="soul">Soul</option>
+              <option value="hiphop">Hip-Hop</option>
+              <option value="electronic">Electronic</option>
+              <option value="rock">Rock</option>
+              <option value="classical">Classical</option>
+              <option value="ambient">Ambient</option>
+              <option value="pop">Pop</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Add Track</label>
+            <div class="track-input-row">
+              <input type="text" id="trackTitle" placeholder="Track title" />
+              <input type="text" id="trackArtist" placeholder="Artist" />
+              <button class="btn-secondary" id="addTrackBtn">Add</button>
+            </div>
+          </div>
+          <ul class="track-list" id="trackList"></ul>
+          <button class="btn-primary" id="pressVinylBtn">💿 Press This Vinyl</button>
+        </div>
+        <div class="build-preview">
+          <div class="preview-vinyl" id="previewVinyl">
+            <div class="vinyl-record">
+              <div class="vinyl-label" id="previewLabel">
+                <span id="previewName">?</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- DIY COVER PAGE -->
+    <section class="page" id="page-cover">
+      <div class="page-header">
+        <h1 class="page-title">Design Your <em>Cover</em></h1>
+        <p class="page-sub">Paint your sleeve</p>
+      </div>
+      <div class="cover-studio">
+        <div class="cover-tools">
+          <div class="tool-group">
+            <label>Brush Size</label>
+            <input type="range" id="brushSize" min="2" max="40" value="10" />
+          </div>
+          <div class="tool-group">
+            <label>Color</label>
+            <input type="color" id="brushColor" value="#f5c518" />
+          </div>
+          <div class="tool-group">
+            <label>Tool</label>
+            <div class="tool-btns">
+              <button class="tool-btn active" data-tool="brush">✏️ Brush</button>
+              <button class="tool-btn" data-tool="eraser">◻ Erase</button>
+              <button class="tool-btn" data-tool="fill">🪣 Fill</button>
+            </div>
+          </div>
+          <div class="tool-group">
+            <label>Text</label>
+            <input type="text" id="coverText" placeholder="Add text to cover" />
+            <button class="btn-secondary" id="addTextBtn">Place Text</button>
+          </div>
+          <button class="btn-secondary" id="clearCanvas">Clear</button>
+          <button class="btn-primary" id="saveCover">Save Cover</button>
+          <button class="btn-secondary" id="downloadCover">Download</button>
+        </div>
+        <canvas id="coverCanvas" width="500" height="500"></canvas>
+      </div>
+    </section>
+
+    <!-- DJ MIX PAGE -->
+    <section class="page" id="page-mix">
+      <div class="page-header">
+        <h1 class="page-title">DJ <em>Mix</em></h1>
+        <p class="page-sub">Coming in Phase 3 — mix your tracks with Tone.js</p>
+      </div>
+      <div class="coming-soon">
+        <div class="cs-disc">◎</div>
+        <p>The decks are warming up...</p>
+      </div>
+    </section>
+
+    <!-- GAMES PAGE -->
+    <section class="page" id="page-games">
+      <div class="page-header">
+        <h1 class="page-title">Vinyl <em>Games</em></h1>
+        <p class="page-sub">Play to your soundtrack</p>
+      </div>
+      <div class="games-grid">
+        <div class="game-card" id="snakeCard">
+          <div class="game-icon">🐍</div>
+          <h3>Groove Snake</h3>
+          <p>Classic snake — the speed syncs to your vinyl's BPM</p>
+          <button class="btn-primary" id="playSnakeBtn">Play</button>
+        </div>
+        <div class="game-card coming">
+          <div class="game-icon">🧩</div>
+          <h3>Sleeve Puzzle</h3>
+          <p>Reassemble your vinyl cover — coming soon</p>
+        </div>
+        <div class="game-card coming">
+          <div class="game-icon">🎵</div>
+          <h3>Track Match</h3>
+          <p>Memory card game with your tracks — coming soon</p>
+        </div>
+      </div>
+      <!-- SNAKE GAME -->
+      <div class="snake-container hidden" id="snakeContainer">
+        <div class="snake-hud">
+          <span>Score: <b id="snakeScore">0</b></span>
+          <span>High Score: <b id="snakeHigh">0</b></span>
+          <button class="btn-secondary" id="closeSnake">✕ Close</button>
+        </div>
+        <canvas id="snakeCanvas" width="400" height="400"></canvas>
+        <p class="snake-hint">Arrow keys or WASD to move</p>
+      </div>
+    </section>
+
+    <!-- POPULAR PAGE -->
+    <section class="page" id="page-popular">
+      <div class="page-header">
+        <h1 class="page-title">Popular <em>Vinyls</em></h1>
+        <p class="page-sub">Community charts — coming with multiplayer</p>
+      </div>
+      <div class="coming-soon">
+        <div class="cs-disc">◑</div>
+        <p>Social features coming in Phase 5...</p>
+      </div>
+    </section>
+
+  </main>
+
+  <script src="public/js/store.js"></script>
+  <script src="public/js/exhibit.js"></script>
+  <script src="public/js/build.js"></script>
+  <script src="public/js/cover.js"></script>
+  <script src="public/js/snake.js"></script>
+  <script src="public/js/app.js"></script>
+</body>
+</html>
