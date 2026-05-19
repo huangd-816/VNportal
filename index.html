@@ -187,7 +187,7 @@
           </div>
           <div class="tool-section-label" style="margin-top:1rem">Image</div>
           <div class="tool-group">
-            <input type="file" id="coverImgUpload" accept="image/*" />
+            <input type="file" id="coverImgUpload" accept="image/*,image/gif" />
           </div>
           <div class="tool-section-label" style="margin-top:1rem">Filters</div>
           <div class="tool-group">
@@ -207,8 +207,8 @@
             <button class="btn-secondary" id="undoCover">↩ Undo</button>
             <button class="btn-primary" id="saveCover">Save to Vinyl</button>
             <button class="btn-secondary" id="exportCover">Export PNG</button>
-            <a class="btn-secondary" href="https://www.canva.com" target="_blank" style="text-decoration:none;display:block;text-align:center;font-size:0.7rem;padding:0.5rem">Open in Canva ↗</a>
-            <a class="btn-secondary" href="https://www.figma.com" target="_blank" style="text-decoration:none;display:block;text-align:center;font-size:0.7rem;padding:0.5rem">Open in Figma ↗</a>
+            <a class="btn-secondary" href="https://www.canva.com/design/create" target="_blank" style="text-decoration:none;display:block;text-align:center;font-size:0.7rem;padding:0.5rem">New Canva Design ↗</a>
+            <a class="btn-secondary" href="https://www.figma.com/design" target="_blank" style="text-decoration:none;display:block;text-align:center;font-size:0.7rem;padding:0.5rem">New Figma File ↗</a>
           </div>
         </div>
         <div class="cover-canvas-wrap">
@@ -269,9 +269,10 @@
           <input type="range" id="crossfader" min="0" max="1" step="0.01" value="0.5" />
           <div class="xfade-center-mark"></div>
           <div class="dj-vumeters">
-            <div class="vu" id="vuA"><div class="vu-bar" id="vuBarA"></div></div>
-            <div class="vu" id="vuB"><div class="vu-bar" id="vuBarB"></div></div>
+            <canvas id="vuCanvasA" width="80" height="60" class="vu-canvas"></canvas>
+            <canvas id="vuCanvasB" width="80" height="60" class="vu-canvas"></canvas>
           </div>
+          <button class="btn-secondary" id="djExportBtn" style="margin-top:.75rem;width:100%;font-size:.7rem">⬇ Export Mix</button>
         </div>
 
         <!-- DECK B -->
@@ -303,6 +304,18 @@
             <div class="eq-band"><label>LO</label><input type="range" id="deckBLo" min="-20" max="20" step="1" value="0" orient="vertical" /></div>
           </div>
         </div>
+      </div>
+      <!-- DJ MACHINE STRIP -->
+      <div class="dj-machine">
+        <div class="dj-light"></div><div class="dj-light"></div><div class="dj-light"></div>
+        <div class="dj-knob-row">
+          <div class="dj-knob"></div><div class="dj-knob"></div><div class="dj-knob"></div>
+        </div>
+        <div class="dj-screen" id="djScreenText">VNportal DJ</div>
+        <div class="dj-knob-row">
+          <div class="dj-knob"></div><div class="dj-knob"></div><div class="dj-knob"></div>
+        </div>
+        <div class="dj-light"></div><div class="dj-light"></div><div class="dj-light"></div>
       </div>
     </section>
 

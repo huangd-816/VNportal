@@ -1,271 +1,174 @@
 // ============================================
-// VNportal — DJ Mix (Phase 3)
-// Two decks, crossfader, EQ, BPM tap
-// Uses Web Audio API — no external libraries
+// VNportal — DJ Mix (Phase 3) with export + visuals
 // ============================================
-
 const DJMix = (() => {
-  let audioCtx  = null;
-  let masterGain = null;
-
-  // Deck state
-  const decks = {
-    A: { audio: null, source: null, gainNode: null, hiEQ: null, midEQ: null, loEQ: null,
-         playing: false, cuePoint: 0, vinylId: null, trackIdx: 0, blobUrl: null },
-    B: { audio: null, source: null, gainNode: null, hiEQ: null, midEQ: null, loEQ: null,
-         playing: false, cuePoint: 0, vinylId: null, trackIdx: 0, blobUrl: null },
+  let audioCtx=null, masterGain=null;
+  const decks={
+    A:{audio:null,gainNode:null,hiEQ:null,midEQ:null,loEQ:null,playing:false,blobUrl:null,trackName:''},
+    B:{audio:null,gainNode:null,hiEQ:null,midEQ:null,loEQ:null,playing:false,blobUrl:null,trackName:''},
   };
+  let crossfade=0.5, tapTimes=[], animFrame=null;
 
-  let crossfadeVal  = 0.5;
-  let tapTimes      = [];
-  let bpmVal        = null;
-  let animFrame     = null;
+  function init(){ populateDecks(); bindControls(); startVisualizer(); }
 
-  // ── Init ──────────────────────────────────
-  function init() {
-    populateDecks();
-    bindControls();
-  }
-
-  function ensureAudioCtx() {
-    if (!audioCtx) {
-      audioCtx  = new (window.AudioContext || window.webkitAudioContext)();
-      masterGain = audioCtx.createGain();
-      masterGain.gain.value = 0.8;
+  function ensureCtx(){
+    if(!audioCtx){
+      audioCtx=new(window.AudioContext||window.webkitAudioContext)();
+      masterGain=audioCtx.createGain(); masterGain.gain.value=0.8;
       masterGain.connect(audioCtx.destination);
-
-      // Init deck nodes
-      ['A','B'].forEach(id => {
-        const d = decks[id];
-        d.gainNode = audioCtx.createGain();
-        d.hiEQ     = createEQ(audioCtx, 'highshelf', 8000);
-        d.midEQ    = createEQ(audioCtx, 'peaking',   1000);
-        d.loEQ     = createEQ(audioCtx, 'lowshelf',  200);
-        // Chain: gainNode → hi → mid → lo → master
-        d.gainNode.connect(d.hiEQ);
-        d.hiEQ.connect(d.midEQ);
-        d.midEQ.connect(d.loEQ);
-        d.loEQ.connect(masterGain);
+      ['A','B'].forEach(id=>{
+        const d=decks[id];
+        d.gainNode=audioCtx.createGain();
+        d.hiEQ=mkEQ(8000,'highshelf'); d.midEQ=mkEQ(1000,'peaking'); d.loEQ=mkEQ(200,'lowshelf');
+        d.gainNode.connect(d.hiEQ); d.hiEQ.connect(d.midEQ); d.midEQ.connect(d.loEQ); d.loEQ.connect(masterGain);
       });
     }
-    if (audioCtx.state === 'suspended') audioCtx.resume();
+    if(audioCtx.state==='suspended') audioCtx.resume();
   }
 
-  function createEQ(ctx, type, freq) {
-    const f       = ctx.createBiquadFilter();
-    f.type        = type;
-    f.frequency.value = freq;
-    f.gain.value  = 0;
-    return f;
+  function mkEQ(freq,type){const f=audioCtx.createBiquadFilter();f.type=type;f.frequency.value=freq;f.gain.value=0;return f;}
+
+  function populateDecks(){
+    const{vinyls}=Store.get();
+    ['A','B'].forEach(id=>{
+      const sel=document.getElementById(`deck${id}Select`);
+      if(!sel) return;
+      sel.innerHTML='<option value="">— Load track —</option>';
+      vinyls.forEach(v=>(v.tracks||[]).forEach((t,ti)=>{
+        const o=document.createElement('option');
+        o.value=`${v.id}:${ti}`; o.textContent=`${t.title} — ${t.artist}`;
+        sel.appendChild(o);
+      }));
+    });
   }
 
-  function populateDecks() {
-    const { vinyls } = Store.get();
-    ['A','B'].forEach(id => {
-      const sel = document.getElementById(`deck${id}Select`);
-      sel.innerHTML = '<option value="">— Load track —</option>';
-      vinyls.forEach(v => {
-        (v.tracks||[]).forEach((t, ti) => {
-          const opt = document.createElement('option');
-          opt.value = `${v.id}:${ti}`;
-          opt.textContent = `${t.title} — ${t.artist}`;
-          sel.appendChild(opt);
+  function bindControls(){
+    ['A','B'].forEach(id=>{
+      document.getElementById(`deck${id}Select`)?.addEventListener('change',e=>loadDeck(id,e.target.value));
+      document.getElementById(`deck${id}Play`)?.addEventListener('click',()=>toggleDeck(id));
+      document.getElementById(`deck${id}Cue`)?.addEventListener('click',()=>{if(decks[id].audio)decks[id].audio.currentTime=0;});
+      ['Hi','Mid','Lo'].forEach(band=>{
+        document.getElementById(`deck${id}${band}`)?.addEventListener('input',e=>{
+          ensureCtx();
+          const eq=decks[id][band.toLowerCase()+'EQ'];
+          if(eq) eq.gain.setTargetAtTime(+e.target.value,audioCtx.currentTime,.01);
         });
       });
+      document.getElementById(`deck${id}Speed`)?.addEventListener('input',e=>{
+        if(decks[id].audio) decks[id].audio.playbackRate=+e.target.value;
+      });
     });
+    document.getElementById('crossfader')?.addEventListener('input',e=>{crossfade=+e.target.value;applyCrossfade();});
+    document.getElementById('masterVol')?.addEventListener('input',e=>{ensureCtx();if(masterGain)masterGain.gain.value=+e.target.value;});
+    document.getElementById('tapBpmBtn')?.addEventListener('click',tapBpm);
+    document.getElementById('djExportBtn')?.addEventListener('click',exportMix);
   }
 
-  function bindControls() {
-    // Deck selects
-    document.getElementById('deckASelect').addEventListener('change', e => loadDeck('A', e.target.value));
-    document.getElementById('deckBSelect').addEventListener('change', e => loadDeck('B', e.target.value));
+  async function loadDeck(id,value){
+    if(!value) return;
+    const[vinylId,tiStr]=value.split(':'); const ti=parseInt(tiStr);
+    const vinyl=Store.getVinyl(vinylId); if(!vinyl) return;
+    const track=vinyl.tracks?.[ti]; if(!track) return;
+    decks[id].trackName=`${track.title} — ${track.artist}`;
+    document.getElementById(`deck${id}TitleDisp`).textContent=track.title;
+    document.getElementById(`deck${id}ArtistDisp`).textContent=track.artist;
+    // Cover on disc
+    const cover=Store.getCover(vinylId);
+    const disc=document.getElementById(`disc${id}`);
+    if(disc&&cover){disc.style.backgroundImage=`url(${cover})`;disc.style.backgroundSize='cover';}
 
-    // Play buttons
-    document.getElementById('deckAPlay').addEventListener('click', () => toggleDeck('A'));
-    document.getElementById('deckBPlay').addEventListener('click', () => toggleDeck('B'));
-
-    // Cue buttons
-    document.getElementById('deckACue').addEventListener('click', () => cueDeck('A'));
-    document.getElementById('deckBCue').addEventListener('click', () => cueDeck('B'));
-
-    // Crossfader
-    document.getElementById('crossfader').addEventListener('input', e => {
-      crossfadeVal = +e.target.value;
-      applyCrossfade();
-    });
-
-    // Master volume
-    document.getElementById('masterVol').addEventListener('input', e => {
-      ensureAudioCtx();
-      if (masterGain) masterGain.gain.value = +e.target.value;
-    });
-
-    // Speed / pitch
-    ['A','B'].forEach(id => {
-      document.getElementById(`deck${id}Speed`).addEventListener('input', e => {
-        const d = decks[id];
-        if (d.audio) d.audio.playbackRate = +e.target.value;
-        setDiscSpeed(id, +e.target.value);
-      });
-      document.getElementById(`deck${id}Hi`).addEventListener('input', e => {
-        ensureAudioCtx(); decks[id].hiEQ?.gain.setTargetAtTime(+e.target.value, audioCtx.currentTime, .01);
-      });
-      document.getElementById(`deck${id}Mid`).addEventListener('input', e => {
-        ensureAudioCtx(); decks[id].midEQ?.gain.setTargetAtTime(+e.target.value, audioCtx.currentTime, .01);
-      });
-      document.getElementById(`deck${id}Lo`).addEventListener('input', e => {
-        ensureAudioCtx(); decks[id].loEQ?.gain.setTargetAtTime(+e.target.value, audioCtx.currentTime, .01);
-      });
-    });
-
-    // BPM tap
-    document.getElementById('tapBpmBtn').addEventListener('click', tapBpm);
-  }
-
-  async function loadDeck(deckId, value) {
-    if (!value) return;
-    const [vinylId, trackIdxStr] = value.split(':');
-    const trackIdx = parseInt(trackIdxStr);
-    const vinyl    = Store.getVinyl(vinylId);
-    if (!vinyl) return;
-
-    const track = vinyl.tracks?.[trackIdx];
-    if (!track) return;
-
-    const d = decks[deckId];
-    d.vinylId  = vinylId;
-    d.trackIdx = trackIdx;
-
-    // Update disc label with cover color
-    const cover = Store.getCover(vinylId);
-    if (cover) {
-      document.getElementById(`disc${deckId}`).style.backgroundImage = `url(${cover})`;
-      document.getElementById(`disc${deckId}`).style.backgroundSize  = 'cover';
-    }
-
-    document.getElementById(`deck${deckId}TitleDisp`).textContent  = track.title;
-    document.getElementById(`deck${deckId}ArtistDisp`).textContent = track.artist;
-    document.getElementById(`discLabel${deckId}`).textContent       = deckId;
-
-    // Try to load local file
-    const key = DB.trackKey(vinylId, trackIdx);
-    const hasLocal = await DB.hasFile(key);
-
-    if (hasLocal) {
-      const url = await DB.getFileURL(key);
-      if (d.blobUrl) URL.revokeObjectURL(d.blobUrl);
-      d.blobUrl = url;
-      d.audio   = new Audio(url);
-      d.audio.addEventListener('ended', () => stopDeck(deckId));
-      setupWebAudio(deckId);
+    const key=DB.trackKey(vinylId,ti);
+    if(await DB.hasFile(key)){
+      const url=await DB.getFileURL(key);
+      if(decks[id].blobUrl) URL.revokeObjectURL(decks[id].blobUrl);
+      decks[id].blobUrl=url;
+      decks[id].audio=new Audio(url);
+      decks[id].audio.addEventListener('ended',()=>stopDeck(id));
+      ensureCtx();
+      try{
+        const src=audioCtx.createMediaElementSource(decks[id].audio);
+        src.connect(decks[id].gainNode);
+      }catch{}
     } else {
-      // No local file — show note
-      document.getElementById(`deck${deckId}TitleDisp`).textContent += ' (upload local file to use DJ)';
+      document.getElementById(`deck${id}TitleDisp`).textContent=track.title+' (upload local file)';
     }
   }
 
-  function setupWebAudio(deckId) {
-    ensureAudioCtx();
-    const d = decks[deckId];
-    if (!d.audio || !d.gainNode) return;
-    try {
-      const src = audioCtx.createMediaElementSource(d.audio);
-      src.connect(d.gainNode);
-      d.source = src;
-    } catch {
-      // Already connected
-    }
-  }
-
-  function toggleDeck(deckId) {
-    const d   = decks[deckId];
-    const btn = document.getElementById(`deck${deckId}Play`);
-    const arm = document.getElementById(`arm${deckId}`);
-    const disc = document.getElementById(`disc${deckId}`);
-
-    if (!d.audio) { alert(`Load a track with a local file onto Deck ${deckId} first!`); return; }
-    ensureAudioCtx();
-
-    if (d.playing) {
-      d.audio.pause();
-      d.playing = false;
-      btn.textContent = '▶';
-      btn.classList.remove('active');
-      disc.classList.remove('playing');
-      arm.classList.remove('playing');
+  function toggleDeck(id){
+    const d=decks[id];
+    if(!d.audio){alert(`Upload a local file to Deck ${id} first!`);return;}
+    ensureCtx();
+    if(d.playing){
+      d.audio.pause(); d.playing=false;
+      document.getElementById(`deck${id}Play`).textContent='▶';
+      document.getElementById(`deck${id}Play`).classList.remove('active');
+      document.getElementById(`disc${id}`)?.classList.remove('playing');
+      document.getElementById(`arm${id}`)?.classList.remove('playing');
     } else {
-      d.audio.play();
-      d.playing = true;
-      btn.textContent = '⏸';
-      btn.classList.add('active');
-      disc.classList.add('playing');
-      arm.classList.add('playing');
+      d.audio.play(); d.playing=true;
+      document.getElementById(`deck${id}Play`).textContent='⏸';
+      document.getElementById(`deck${id}Play`).classList.add('active');
+      document.getElementById(`disc${id}`)?.classList.add('playing');
+      document.getElementById(`arm${id}`)?.classList.add('playing');
     }
     applyCrossfade();
-    startVUMeter();
   }
 
-  function cueDeck(deckId) {
-    const d = decks[deckId];
-    if (!d.audio) return;
-    d.cuePoint = d.audio.currentTime;
+  function stopDeck(id){
+    decks[id].playing=false;
+    document.getElementById(`deck${id}Play`).textContent='▶';
+    document.getElementById(`deck${id}Play`).classList.remove('active');
+    document.getElementById(`disc${id}`)?.classList.remove('playing');
+    document.getElementById(`arm${id}`)?.classList.remove('playing');
   }
 
-  function stopDeck(deckId) {
-    const d = decks[deckId];
-    d.playing = false;
-    const btn = document.getElementById(`deck${deckId}Play`);
-    btn.textContent = '▶';
-    btn.classList.remove('active');
-    document.getElementById(`disc${deckId}`).classList.remove('playing');
-    document.getElementById(`arm${deckId}`).classList.remove('playing');
+  function applyCrossfade(){
+    ensureCtx();
+    decks.A.gainNode?.gain.setTargetAtTime(Math.cos(crossfade*Math.PI/2),audioCtx.currentTime,.02);
+    decks.B.gainNode?.gain.setTargetAtTime(Math.cos((1-crossfade)*Math.PI/2),audioCtx.currentTime,.02);
   }
 
-  function applyCrossfade() {
-    ensureAudioCtx();
-    // crossfadeVal: 0=full A, 0.5=equal, 1=full B
-    const gainA = Math.cos(crossfadeVal * Math.PI/2);
-    const gainB = Math.cos((1-crossfadeVal) * Math.PI/2);
-    decks.A.gainNode?.gain.setTargetAtTime(gainA, audioCtx.currentTime, .02);
-    decks.B.gainNode?.gain.setTargetAtTime(gainB, audioCtx.currentTime, .02);
-  }
-
-  function setDiscSpeed(deckId, speed) {
-    const disc = document.getElementById(`disc${deckId}`);
-    const dur  = 2 / speed;
-    disc.style.animationDuration = `${dur}s`;
-  }
-
-  // BPM tap
-  function tapBpm() {
-    tapTimes.push(Date.now());
-    if (tapTimes.length > 8) tapTimes.shift();
-    if (tapTimes.length >= 2) {
-      const diffs  = tapTimes.slice(1).map((t,i)=>t-tapTimes[i]);
-      const avg    = diffs.reduce((a,b)=>a+b,0)/diffs.length;
-      bpmVal       = Math.round(60000/avg);
-      document.getElementById('bpmDisplay').textContent = `${bpmVal} BPM`;
+  function tapBpm(){
+    tapTimes.push(Date.now()); if(tapTimes.length>8) tapTimes.shift();
+    if(tapTimes.length>=2){
+      const avg=tapTimes.slice(1).map((t,i)=>t-tapTimes[i]).reduce((a,b)=>a+b)/( tapTimes.length-1);
+      document.getElementById('bpmDisplay').textContent=Math.round(60000/avg)+' BPM';
     }
   }
 
-  // Fake VU meter animation
-  function startVUMeter() {
-    if (animFrame) return;
-    function tick() {
-      ['A','B'].forEach(id => {
-        const d = decks[id];
-        const level = d.playing ? 0.3 + Math.random()*0.6 : 0;
-        const bar   = document.getElementById(`vuBar${id}`);
-        if (bar) bar.style.height = (level*100)+'%';
+  function exportMix(){
+    const tracks=[];
+    if(decks.A.trackName) tracks.push(`Deck A: ${decks.A.trackName}`);
+    if(decks.B.trackName) tracks.push(`Deck B: ${decks.B.trackName}`);
+    if(!tracks.length){alert('Load tracks on the decks first!');return;}
+    const text=`VNportal DJ Mix\n${new Date().toLocaleDateString()}\n\n${tracks.join('\n')}\n\nCrossfader: ${Math.round(crossfade*100)}% B\n\nhttps://github.com/huangd-816/VNportal`;
+    const blob=new Blob([text],{type:'text/plain'});
+    const a=document.createElement('a'); a.download='vnportal-mix.txt'; a.href=URL.createObjectURL(blob); a.click();
+    // Also share
+    if(navigator.share) navigator.share({title:'My VNportal Mix',text,url:'https://github.com/huangd-816/VNportal'}).catch(()=>{});
+  }
+
+  function startVisualizer(){
+    const canvasA=document.getElementById('vuCanvasA'), canvasB=document.getElementById('vuCanvasB');
+    if(!canvasA||!canvasB) return;
+    const ctxA=canvasA.getContext('2d'), ctxB=canvasB.getContext('2d');
+    function draw(){
+      [['A',ctxA,canvasA],['B',ctxB,canvasB]].forEach(([id,c,cv])=>{
+        const playing=decks[id].playing;
+        c.clearRect(0,0,cv.width,cv.height);
+        const bars=12;
+        for(let i=0;i<bars;i++){
+          const h=playing?(0.2+Math.random()*0.8)*cv.height:4;
+          const hue=200+i*12;
+          c.fillStyle=`hsl(${hue},90%,60%)`;
+          c.fillRect(i*(cv.width/bars)+1,cv.height-h,(cv.width/bars)-2,h);
+        }
       });
-      animFrame = requestAnimationFrame(tick);
+      animFrame=requestAnimationFrame(draw);
     }
-    tick();
+    draw();
   }
 
-  function onShow() {
-    populateDecks();
-  }
-
-  return { init, onShow };
+  function onShow(){ populateDecks(); }
+  return{init,onShow};
 })();
