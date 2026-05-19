@@ -14,39 +14,43 @@ const App = (() => {
     if (navEl)  navEl.classList.add('active');
     current = page;
 
-    // Page lifecycle hooks
-    if (page === 'exhibit')       Exhibit.render();
-    if (page === 'cover')         Cover.onShow();
-    if (page === 'mix')           DJMix.onShow();
+    if (page === 'exhibit')      Exhibit.render();
+    if (page === 'cover')        Cover.onShow();
+    if (page === 'mix' && typeof DJMix !== 'undefined') DJMix.onShow();
   }
 
   function init() {
     document.querySelectorAll('.nav-item').forEach(link => {
-      link.addEventListener('click', e => { e.preventDefault(); navigate(link.dataset.page); });
+      link.addEventListener('click', e => {
+        e.preventDefault();
+        navigate(link.dataset.page);
+      });
     });
 
-    // Init all modules
+    // Init modules — guard each one
     Exhibit.init();
     Build.init();
     Cover.init();
     VinylSearch.init();
     Snake.init();
     Game2048.init();
-    DJMix.init();
+    if (typeof DJMix !== 'undefined') DJMix.init();
     Player.initUI();
-    Spotify.init();
+    if (typeof Spotify !== 'undefined') Spotify.init();
+
+    // Make sure snake + 2048 containers start hidden
+    document.getElementById('snakeContainer')?.classList.add('hidden');
+    document.getElementById('game2048Container')?.classList.add('hidden');
 
     navigate('exhibit');
 
-    // Restore now-playing
     const vinyl = Store.getCurrentVinyl();
     if (vinyl?.tracks?.length) {
       document.getElementById('npTitle').textContent  = vinyl.tracks[0].title;
       document.getElementById('npArtist').textContent = vinyl.tracks[0].artist;
     }
 
-    // Button to add vinyl from exhibit → go to search or build
-    document.getElementById('addVinylBtn').addEventListener('click', () => navigate('search-vinyl'));
+    document.getElementById('addVinylBtn')?.addEventListener('click', () => navigate('search-vinyl'));
   }
 
   return { init, navigate, current: () => current };

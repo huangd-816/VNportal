@@ -55,6 +55,7 @@ const Cover = (() => {
 
   function populateVinylSelect() {
     const sel  = document.getElementById('coverVinylSelect');
+    if (!sel) return;
     const { vinyls } = Store.get();
     sel.innerHTML = '<option value="">— Select a vinyl —</option>';
     vinyls.forEach(v => {

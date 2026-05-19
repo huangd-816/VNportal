@@ -410,3 +410,86 @@ body:has(.player-bar.visible) .main-content{padding-bottom:calc(var(--player-h) 
   .g2048-board{width:100%;max-width:360px}
   .g2048-cell{height:80px;font-size:1.4rem}
 }
+
+/* ==========================================
+   CIRCULAR VINYL CARDS — Exhibit
+   ========================================== */
+.vinyl-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 2rem;
+}
+.vinyl-card {
+  cursor: pointer;
+  transition: transform .22s;
+  text-align: center;
+}
+.vinyl-card:hover { transform: translateY(-5px); }
+
+.vinyl-disc-wrap {
+  display: flex;
+  justify-content: center;
+  margin-bottom: .9rem;
+}
+.vinyl-disc-outer {
+  width: 160px; height: 160px;
+  border-radius: 50%;
+  position: relative;
+  background: radial-gradient(circle at 50%, #0a0a0a 18%, transparent 19%),
+    repeating-radial-gradient(circle at 50%, #111, #111 1px, #1c1c1c 1px, #1c1c1c 3px);
+  border: 1px solid #282828;
+  box-shadow: 0 0 30px rgba(0,0,0,.6), 0 0 0 1px #1a1a1a;
+  overflow: hidden;
+  transition: box-shadow .2s;
+}
+.vinyl-card:hover .vinyl-disc-outer {
+  box-shadow: 0 0 40px rgba(245,197,24,.15), 0 0 0 1px var(--accent);
+}
+.vinyl-disc-outer.spinning { animation: spin 3s linear infinite; }
+
+.vinyl-disc-cover {
+  width: 100%; height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
+  position: absolute; inset: 0;
+}
+.vinyl-disc-grooves {
+  width: 100%; height: 100%;
+  display: flex; align-items: center; justify-content: center;
+}
+.vinyl-disc-label {
+  width: 42%; height: 42%;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--font-d);
+  font-size: .45rem;
+  text-align: center;
+  color: #000;
+  padding: 4px;
+  overflow: hidden;
+}
+.vinyl-disc-hole {
+  position: absolute;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  width: 12px; height: 12px;
+  border-radius: 50%;
+  background: var(--bg);
+  border: 1px solid #1a1a1a;
+  z-index: 2;
+}
+.vinyl-card-body { padding: 0 .25rem; }
+.vinyl-card-name {
+  font-size: .8rem; color: var(--text);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  margin-bottom: .2rem;
+}
+.vinyl-card-meta { font-size: .62rem; color: var(--text-dim); margin-bottom: .65rem; }
+.vinyl-card-actions { display: flex; gap: .35rem; justify-content: center; }
+
+/* Fix: DIY vinyl subtitle */
+#page-build .page-sub::after { content: ''; }
+
+/* Fix: game containers always start hidden */
+.game-container { display: none; }
+.game-container:not(.hidden) { display: inline-block; }

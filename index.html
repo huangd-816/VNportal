@@ -10,32 +10,40 @@
 </head>
 <body>
 
-  <!-- NOISE OVERLAY -->
   <div class="noise"></div>
 
-  <!-- SIDEBAR NAV -->
+  <!-- BACKGROUND TURNTABLE -->
+  <div class="bg-turntable" aria-hidden="true">
+    <div class="bg-platter">
+      <div class="bg-record spinning-slow">
+        <div class="bg-label"></div>
+      </div>
+    </div>
+    <div class="bg-arm"></div>
+  </div>
+
+  <!-- SIDEBAR -->
   <nav class="sidebar">
     <div class="logo">VN<span>portal</span></div>
     <ul class="nav-links">
-      <li><a href="#" class="nav-item active" data-page="exhibit">
-        <span class="nav-icon">◈</span> Exhibit
-      </a></li>
-      <li><a href="#" class="nav-item" data-page="build">
-        <span class="nav-icon">◉</span> Build Vinyl
-      </a></li>
-      <li><a href="#" class="nav-item" data-page="cover">
-        <span class="nav-icon">◫</span> DIY Cover
-      </a></li>
-      <li><a href="#" class="nav-item" data-page="mix">
-        <span class="nav-icon">◎</span> DJ Mix
-      </a></li>
-      <li><a href="#" class="nav-item" data-page="games">
-        <span class="nav-icon">◐</span> Games
-      </a></li>
-      <li><a href="#" class="nav-item" data-page="popular">
-        <span class="nav-icon">◑</span> Popular
-      </a></li>
+      <li><a href="#" class="nav-item active" data-page="exhibit"><span class="nav-icon">◈</span> Exhibit</a></li>
+      <li><a href="#" class="nav-item" data-page="search-vinyl"><span class="nav-icon">◎</span> Find Vinyl</a></li>
+      <li><a href="#" class="nav-item" data-page="build"><span class="nav-icon">◉</span> DIY Vinyl</a></li>
+      <li><a href="#" class="nav-item" data-page="cover"><span class="nav-icon">◫</span> Cover Studio</a></li>
+      <li><a href="#" class="nav-item" data-page="mix"><span class="nav-icon">◑</span> DJ Mix</a></li>
+      <li><a href="#" class="nav-item" data-page="games"><span class="nav-icon">◐</span> Games</a></li>
+      <li><a href="#" class="nav-item" data-page="popular"><span class="nav-icon">◆</span> Workshop</a></li>
     </ul>
+
+    <!-- SPOTIFY CONNECT -->
+    <div class="sidebar-spotify" id="spotifyConnect">
+      <button class="spotify-btn" id="spotifyBtn">
+        <span class="spotify-icon">♫</span>
+        <span id="spotifyBtnLabel">Connect Spotify</span>
+      </button>
+    </div>
+
+    <!-- NOW PLAYING -->
     <div class="sidebar-now-playing" id="nowPlaying">
       <div class="np-disc spinning" id="npDisc"></div>
       <div class="np-info">
@@ -48,27 +56,47 @@
   <!-- MAIN CONTENT -->
   <main class="main-content" id="mainContent">
 
-    <!-- EXHIBIT PAGE -->
+    <!-- EXHIBIT -->
     <section class="page active" id="page-exhibit">
       <div class="page-header">
         <h1 class="page-title">Your <em>Exhibit</em></h1>
         <p class="page-sub">Your personal vinyl gallery</p>
-        <button class="btn-primary" id="addVinylBtn">+ Press New Vinyl</button>
+        <button class="btn-primary" id="addVinylBtn">+ Add Vinyl</button>
       </div>
-      <div class="vinyl-grid" id="vinylGrid">
-        <!-- Vinyl cards injected by JS -->
-      </div>
+      <div class="vinyl-grid" id="vinylGrid"></div>
       <div class="empty-state" id="emptyState">
         <div class="empty-disc">◎</div>
-        <p>Your exhibit is empty.<br/>Press your first vinyl to begin.</p>
+        <p>Your exhibit is empty.<br/>Find or press your first vinyl to begin.</p>
       </div>
     </section>
 
-    <!-- BUILD VINYL PAGE -->
+    <!-- FIND VINYL (MusicBrainz search) -->
+    <section class="page" id="page-search-vinyl">
+      <div class="page-header">
+        <h1 class="page-title">Find a <em>Vinyl</em></h1>
+        <p class="page-sub">Search the global music database</p>
+      </div>
+      <div class="search-bar-wrap">
+        <input type="text" id="vinylSearchInput" placeholder="Album or artist name..." class="search-input" />
+        <button class="btn-primary" id="vinylSearchBtn">Search</button>
+      </div>
+      <div class="search-filters">
+        <button class="filter-btn active" data-filter="all">All</button>
+        <button class="filter-btn" data-filter="album">Albums</button>
+        <button class="filter-btn" data-filter="ep">EPs</button>
+        <button class="filter-btn" data-filter="single">Singles</button>
+      </div>
+      <div class="search-results" id="searchResults"></div>
+      <div class="search-empty hidden" id="searchEmpty">
+        <p>No results yet — try searching above</p>
+      </div>
+    </section>
+
+    <!-- DIY VINYL -->
     <section class="page" id="page-build">
       <div class="page-header">
         <h1 class="page-title">Press a <em>Vinyl</em></h1>
-        <p class="page-sub">Curate your tracks, name your record</p>
+        <p class="page-sub">Create your own custom record</p>
       </div>
       <div class="build-container">
         <div class="build-form">
@@ -77,145 +105,339 @@
             <input type="text" id="vinylName" placeholder="e.g. Late Night Sessions" />
           </div>
           <div class="form-group">
-            <label>Genre / Mood</label>
-            <select id="vinylGenre">
-              <option value="jazz">Jazz</option>
-              <option value="soul">Soul</option>
-              <option value="hiphop">Hip-Hop</option>
-              <option value="electronic">Electronic</option>
-              <option value="rock">Rock</option>
-              <option value="classical">Classical</option>
-              <option value="ambient">Ambient</option>
-              <option value="pop">Pop</option>
-            </select>
-          </div>
-          <div class="form-group">
             <label>Add Track</label>
             <div class="track-input-row">
               <input type="text" id="trackTitle" placeholder="Track title" />
               <input type="text" id="trackArtist" placeholder="Artist" />
               <button class="btn-secondary" id="addTrackBtn">Add</button>
             </div>
+            <div class="track-source-row">
+              <div class="source-option">
+                <span class="source-label">📁 Local file</span>
+                <input type="file" id="trackFile" accept="audio/*,video/*" />
+              </div>
+              <div class="source-divider">or</div>
+              <div class="source-option">
+                <span class="source-label">▶ YouTube URL</span>
+                <input type="text" id="trackYtUrl" placeholder="https://youtube.com/watch?v=..." />
+              </div>
+            </div>
+            <p class="source-hint">Leave blank → VNportal will auto-search YouTube</p>
           </div>
           <ul class="track-list" id="trackList"></ul>
           <button class="btn-primary" id="pressVinylBtn">💿 Press This Vinyl</button>
         </div>
         <div class="build-preview">
-          <div class="preview-vinyl" id="previewVinyl">
-            <div class="vinyl-record">
-              <div class="vinyl-label" id="previewLabel">
-                <span id="previewName">?</span>
-              </div>
+          <div class="vinyl-record">
+            <div class="vinyl-label" id="previewLabel">
+              <span id="previewName">?</span>
             </div>
           </div>
         </div>
       </div>
     </section>
 
-    <!-- DIY COVER PAGE -->
+    <!-- COVER STUDIO -->
     <section class="page" id="page-cover">
       <div class="page-header">
-        <h1 class="page-title">Design Your <em>Cover</em></h1>
-        <p class="page-sub">Paint your sleeve</p>
+        <h1 class="page-title">Cover <em>Studio</em></h1>
+        <p class="page-sub">Design your sleeve — vinyl-shaped canvas</p>
+        <div class="cover-vinyl-select">
+          <select id="coverVinylSelect"><option value="">— Select a vinyl —</option></select>
+        </div>
       </div>
       <div class="cover-studio">
         <div class="cover-tools">
+          <div class="tool-section-label">Tools</div>
+          <div class="tool-btns">
+            <button class="tool-btn active" data-tool="brush">✏️ Brush</button>
+            <button class="tool-btn" data-tool="eraser">◻ Erase</button>
+            <button class="tool-btn" data-tool="fill">🪣 Fill</button>
+            <button class="tool-btn" data-tool="eyedropper">💉 Pick</button>
+          </div>
+          <div class="tool-section-label" style="margin-top:1rem">Brush</div>
           <div class="tool-group">
-            <label>Brush Size</label>
-            <input type="range" id="brushSize" min="2" max="40" value="10" />
+            <label>Size</label>
+            <input type="range" id="brushSize" min="1" max="60" value="10" />
+          </div>
+          <div class="tool-group">
+            <label>Opacity</label>
+            <input type="range" id="brushOpacity" min="0.05" max="1" step="0.05" value="1" />
           </div>
           <div class="tool-group">
             <label>Color</label>
             <input type="color" id="brushColor" value="#f5c518" />
           </div>
+          <div class="color-swatches" id="colorSwatches">
+            <div class="swatch" style="background:#f5c518" data-color="#f5c518"></div>
+            <div class="swatch" style="background:#e8734a" data-color="#e8734a"></div>
+            <div class="swatch" style="background:#e8e0d5" data-color="#e8e0d5"></div>
+            <div class="swatch" style="background:#2980b9" data-color="#2980b9"></div>
+            <div class="swatch" style="background:#27ae60" data-color="#27ae60"></div>
+            <div class="swatch" style="background:#8e44ad" data-color="#8e44ad"></div>
+            <div class="swatch" style="background:#c0392b" data-color="#c0392b"></div>
+            <div class="swatch" style="background:#000000" data-color="#000000"></div>
+          </div>
+          <div class="tool-section-label" style="margin-top:1rem">Text</div>
           <div class="tool-group">
-            <label>Tool</label>
-            <div class="tool-btns">
-              <button class="tool-btn active" data-tool="brush">✏️ Brush</button>
-              <button class="tool-btn" data-tool="eraser">◻ Erase</button>
-              <button class="tool-btn" data-tool="fill">🪣 Fill</button>
-            </div>
+            <input type="text" id="coverText" placeholder="Type text..." class="cover-text-input"/>
+            <input type="range" id="textSize" min="12" max="80" value="28" />
+            <button class="tool-btn" id="addTextBtn" style="width:100%;margin-top:0.4rem">Place Text</button>
+          </div>
+          <div class="tool-section-label" style="margin-top:1rem">Image</div>
+          <div class="tool-group">
+            <input type="file" id="coverImgUpload" accept="image/*" />
+          </div>
+          <div class="tool-section-label" style="margin-top:1rem">Filters</div>
+          <div class="tool-group">
+            <label>Brightness</label>
+            <input type="range" id="filterBrightness" min="0.2" max="2" step="0.05" value="1" />
           </div>
           <div class="tool-group">
-            <label>Text</label>
-            <input type="text" id="coverText" placeholder="Add text to cover" />
-            <button class="btn-secondary" id="addTextBtn">Place Text</button>
+            <label>Contrast</label>
+            <input type="range" id="filterContrast" min="0.2" max="2" step="0.05" value="1" />
           </div>
-          <button class="btn-secondary" id="clearCanvas">Clear</button>
-          <button class="btn-primary" id="saveCover">Save Cover</button>
-          <button class="btn-secondary" id="downloadCover">Download</button>
+          <div class="tool-group">
+            <label>Saturation</label>
+            <input type="range" id="filterSaturation" min="0" max="3" step="0.1" value="1" />
+          </div>
+          <div class="cover-actions">
+            <button class="btn-secondary" id="clearCanvas">Clear</button>
+            <button class="btn-secondary" id="undoCover">↩ Undo</button>
+            <button class="btn-primary" id="saveCover">Save to Vinyl</button>
+            <button class="btn-secondary" id="exportCover">Export PNG</button>
+            <a class="btn-secondary" href="https://www.canva.com" target="_blank" style="text-decoration:none;display:block;text-align:center;font-size:0.7rem;padding:0.5rem">Open in Canva ↗</a>
+            <a class="btn-secondary" href="https://www.figma.com" target="_blank" style="text-decoration:none;display:block;text-align:center;font-size:0.7rem;padding:0.5rem">Open in Figma ↗</a>
+          </div>
         </div>
-        <canvas id="coverCanvas" width="500" height="500"></canvas>
+        <div class="cover-canvas-wrap">
+          <canvas id="coverCanvas" width="500" height="500"></canvas>
+        </div>
       </div>
     </section>
 
-    <!-- DJ MIX PAGE -->
+    <!-- DJ MIX -->
     <section class="page" id="page-mix">
       <div class="page-header">
         <h1 class="page-title">DJ <em>Mix</em></h1>
-        <p class="page-sub">Coming in Phase 3 — mix your tracks with Tone.js</p>
+        <p class="page-sub">Two decks, one crossfader</p>
       </div>
-      <div class="coming-soon">
-        <div class="cs-disc">◎</div>
-        <p>The decks are warming up...</p>
+      <div class="dj-console">
+        <!-- DECK A -->
+        <div class="deck" id="deckA">
+          <div class="deck-label">DECK A</div>
+          <div class="deck-disc-wrap">
+            <div class="deck-disc" id="discA">
+              <div class="deck-disc-label" id="discLabelA">A</div>
+            </div>
+            <div class="deck-arm" id="armA"></div>
+          </div>
+          <div class="deck-track-info">
+            <div class="deck-title" id="deckATitleDisp">No track</div>
+            <div class="deck-artist" id="deckAArtistDisp">—</div>
+          </div>
+          <select class="deck-select" id="deckASelect"><option value="">— Load track —</option></select>
+          <div class="deck-controls">
+            <button class="deck-btn" id="deckAPrev">⏮</button>
+            <button class="deck-btn play" id="deckAPlay">▶</button>
+            <button class="deck-btn" id="deckACue">CUE</button>
+          </div>
+          <div class="deck-knobs">
+            <div class="knob-group"><label>SPEED</label><input type="range" id="deckASpeed" min="0.5" max="2" step="0.01" value="1" /></div>
+            <div class="knob-group"><label>PITCH</label><input type="range" id="deckAPitch" min="-12" max="12" step="1" value="0" /></div>
+          </div>
+          <div class="deck-eq">
+            <div class="eq-band"><label>HI</label><input type="range" id="deckAHi" min="-20" max="20" step="1" value="0" orient="vertical" /></div>
+            <div class="eq-band"><label>MID</label><input type="range" id="deckAMid" min="-20" max="20" step="1" value="0" orient="vertical" /></div>
+            <div class="eq-band"><label>LO</label><input type="range" id="deckALo" min="-20" max="20" step="1" value="0" orient="vertical" /></div>
+          </div>
+        </div>
+
+        <!-- CROSSFADER + MASTER -->
+        <div class="crossfader-col">
+          <div class="master-vol-wrap">
+            <label class="xfade-label">MASTER VOL</label>
+            <input type="range" id="masterVol" min="0" max="1" step="0.02" value="0.8" />
+          </div>
+          <div class="bpm-display">
+            <div class="bpm-val" id="bpmDisplay">— BPM</div>
+            <button class="deck-btn" id="tapBpmBtn">TAP</button>
+          </div>
+          <label class="xfade-label">CROSSFADER</label>
+          <div class="xfade-labels"><span>A</span><span>B</span></div>
+          <input type="range" id="crossfader" min="0" max="1" step="0.01" value="0.5" />
+          <div class="xfade-center-mark"></div>
+          <div class="dj-vumeters">
+            <div class="vu" id="vuA"><div class="vu-bar" id="vuBarA"></div></div>
+            <div class="vu" id="vuB"><div class="vu-bar" id="vuBarB"></div></div>
+          </div>
+        </div>
+
+        <!-- DECK B -->
+        <div class="deck" id="deckB">
+          <div class="deck-label">DECK B</div>
+          <div class="deck-disc-wrap">
+            <div class="deck-disc" id="discB">
+              <div class="deck-disc-label" id="discLabelB">B</div>
+            </div>
+            <div class="deck-arm" id="armB"></div>
+          </div>
+          <div class="deck-track-info">
+            <div class="deck-title" id="deckBTitleDisp">No track</div>
+            <div class="deck-artist" id="deckBArtistDisp">—</div>
+          </div>
+          <select class="deck-select" id="deckBSelect"><option value="">— Load track —</option></select>
+          <div class="deck-controls">
+            <button class="deck-btn" id="deckBPrev">⏮</button>
+            <button class="deck-btn play" id="deckBPlay">▶</button>
+            <button class="deck-btn" id="deckBCue">CUE</button>
+          </div>
+          <div class="deck-knobs">
+            <div class="knob-group"><label>SPEED</label><input type="range" id="deckBSpeed" min="0.5" max="2" step="0.01" value="1" /></div>
+            <div class="knob-group"><label>PITCH</label><input type="range" id="deckBPitch" min="-12" max="12" step="1" value="0" /></div>
+          </div>
+          <div class="deck-eq">
+            <div class="eq-band"><label>HI</label><input type="range" id="deckBHi" min="-20" max="20" step="1" value="0" orient="vertical" /></div>
+            <div class="eq-band"><label>MID</label><input type="range" id="deckBMid" min="-20" max="20" step="1" value="0" orient="vertical" /></div>
+            <div class="eq-band"><label>LO</label><input type="range" id="deckBLo" min="-20" max="20" step="1" value="0" orient="vertical" /></div>
+          </div>
+        </div>
       </div>
     </section>
 
-    <!-- GAMES PAGE -->
+    <!-- GAMES -->
     <section class="page" id="page-games">
       <div class="page-header">
         <h1 class="page-title">Vinyl <em>Games</em></h1>
-        <p class="page-sub">Play to your soundtrack</p>
+        <p class="page-sub">Powered by your collection</p>
       </div>
       <div class="games-grid">
         <div class="game-card" id="snakeCard">
           <div class="game-icon">🐍</div>
           <h3>Groove Snake</h3>
-          <p>Classic snake — the speed syncs to your vinyl's BPM</p>
+          <p>Classic snake — food tiles built from your vinyl cover</p>
           <button class="btn-primary" id="playSnakeBtn">Play</button>
+        </div>
+        <div class="game-card" id="game2048Card">
+          <div class="game-icon">🟨</div>
+          <h3>Vinyl 2048</h3>
+          <p>Merge tiles to reveal your vinyl cover art</p>
+          <button class="btn-primary" id="play2048Btn">Play</button>
         </div>
         <div class="game-card coming">
           <div class="game-icon">🧩</div>
           <h3>Sleeve Puzzle</h3>
-          <p>Reassemble your vinyl cover — coming soon</p>
+          <p>Reassemble your cover — coming soon</p>
         </div>
         <div class="game-card coming">
-          <div class="game-icon">🎵</div>
-          <h3>Track Match</h3>
-          <p>Memory card game with your tracks — coming soon</p>
+          <div class="game-icon">🔤</div>
+          <h3>Lyric Crossword</h3>
+          <p>Keywords from your tracks — coming soon</p>
+        </div>
+        <div class="game-card coming">
+          <div class="game-icon">🎨</div>
+          <h3>Colour by Number</h3>
+          <p>Paint your cover pixel by pixel — coming soon</p>
         </div>
       </div>
+
       <!-- SNAKE GAME -->
-      <div class="snake-container hidden" id="snakeContainer">
-        <div class="snake-hud">
+      <div class="game-container hidden" id="snakeContainer">
+        <div class="game-hud">
           <span>Score: <b id="snakeScore">0</b></span>
-          <span>High Score: <b id="snakeHigh">0</b></span>
-          <button class="btn-secondary" id="closeSnake">✕ Close</button>
+          <span>Best: <b id="snakeHigh">0</b></span>
+          <button class="btn-secondary share-btn" id="shareSnakeBtn">Share</button>
+          <button class="btn-secondary" id="closeSnake">✕</button>
         </div>
-        <canvas id="snakeCanvas" width="400" height="400"></canvas>
-        <p class="snake-hint">Arrow keys or WASD to move</p>
+        <canvas id="snakeCanvas" width="480" height="480"></canvas>
+        <p class="game-hint">Arrow keys / WASD · Space to pause</p>
+      </div>
+
+      <!-- 2048 GAME -->
+      <div class="game-container hidden" id="game2048Container">
+        <div class="game-hud">
+          <span>Score: <b id="score2048">0</b></span>
+          <span>Best: <b id="best2048">0</b></span>
+          <button class="btn-secondary share-btn" id="share2048Btn">Share</button>
+          <button class="btn-secondary" id="close2048">✕</button>
+        </div>
+        <div class="g2048-board" id="board2048"></div>
+        <p class="game-hint">Arrow keys to merge · Reach 2048 to reveal the full cover!</p>
       </div>
     </section>
 
-    <!-- POPULAR PAGE -->
+    <!-- WORKSHOP -->
     <section class="page" id="page-popular">
       <div class="page-header">
-        <h1 class="page-title">Popular <em>Vinyls</em></h1>
-        <p class="page-sub">Community charts — coming with multiplayer</p>
+        <h1 class="page-title">Creative <em>Workshop</em></h1>
+        <p class="page-sub">Share your vinyls, covers, and scores</p>
       </div>
       <div class="coming-soon">
-        <div class="cs-disc">◑</div>
-        <p>Social features coming in Phase 5...</p>
+        <div class="cs-disc">◆</div>
+        <p>Community features coming in Phase 5<br/>Share · Discover · Discuss</p>
       </div>
     </section>
 
   </main>
 
+  <!-- HIDDEN YOUTUBE PLAYER -->
+  <div style="position:fixed;bottom:-5px;left:-5px;width:1px;height:1px;overflow:hidden;opacity:0;pointer-events:none;">
+    <div id="ytPlayerInner"></div>
+  </div>
+
+  <!-- YOUTUBE SEARCH OVERLAY -->
+  <div class="yt-search-overlay hidden" id="ytSearchOverlay">
+    <div class="yt-search-box">
+      <p class="yt-search-title">Link this track</p>
+      <p class="yt-search-sub">Paste a YouTube URL to link it permanently, or search on YouTube:</p>
+      <div class="yt-manual-row">
+        <input type="text" id="ytManualUrl" placeholder="https://youtube.com/watch?v=..." />
+        <button class="btn-primary" id="ytManualPlayBtn">▶ Play</button>
+      </div>
+      <a id="ytSearchLink" href="#" target="_blank" class="btn-secondary" style="display:block;text-align:center;margin-top:0.75rem;text-decoration:none;">Open YouTube ↗</a>
+      <button class="btn-secondary" id="ytSearchClose" style="width:100%;margin-top:0.5rem;">Skip</button>
+    </div>
+  </div>
+
+  <!-- PLAYER BAR -->
+  <div class="player-bar" id="playerBar">
+    <div class="player-disc-wrap">
+      <div class="player-disc spinning" id="playerDisc"></div>
+    </div>
+    <div class="player-track-info">
+      <div class="player-track-title" id="playerTrackTitle">—</div>
+      <div class="player-track-artist" id="playerTrackArtist">—</div>
+      <div class="player-vinyl-name" id="playerVinylName">—</div>
+    </div>
+    <div class="player-controls">
+      <button class="player-btn" id="playerPrevBtn">⏮</button>
+      <button class="player-btn play" id="playerPlayBtn">▶</button>
+      <button class="player-btn" id="playerNextBtn">⏭</button>
+    </div>
+    <div class="player-progress-wrap">
+      <div class="player-progress-bar" id="playerProgressBar">
+        <div class="player-progress" id="playerProgress"></div>
+      </div>
+      <div class="player-time" id="playerTime">0:00 / 0:00</div>
+    </div>
+    <div class="player-volume-wrap">
+      <span>🔊</span>
+      <input type="range" id="playerVolume" min="0" max="1" step="0.02" value="0.8" />
+    </div>
+    <span class="player-source-badge" id="playerSourceBadge">—</span>
+  </div>
+
   <script src="public/js/store.js"></script>
+  <script src="public/js/db.js"></script>
+  <script src="public/js/player.js"></script>
   <script src="public/js/exhibit.js"></script>
   <script src="public/js/build.js"></script>
+  <script src="public/js/vinyl-search.js"></script>
   <script src="public/js/cover.js"></script>
   <script src="public/js/snake.js"></script>
+  <script src="public/js/game2048.js"></script>
+  <script src="public/js/spotify.js"></script>
+  <script src="public/js/dj-mix.js"></script>
   <script src="public/js/app.js"></script>
 </body>
 </html>
