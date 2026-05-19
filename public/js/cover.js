@@ -15,7 +15,7 @@ const Cover = (() => {
   function init() {
     canvas = document.getElementById('coverCanvas');
     if (!canvas) return;
-    ctx = canvas.getContext('2d');
+    ctx = canvas.getContext('2d', {willReadFrequently: true});
     initCanvas();
     bindControls();
     populateVinylSelect();

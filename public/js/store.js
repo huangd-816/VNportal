@@ -80,3 +80,13 @@ const Store = (() => {
 
   return { get, addVinyl, getVinyl, updateVinyl, deleteVinyl, saveCover, getCover, setCurrentVinyl, getCurrentVinyl };
 })();
+
+  // Save a plain URL as cover (fallback when canvas is CORS-tainted)
+  function saveCoverUrl(vinylId, url) {
+    const data = load();
+    data.covers[vinylId] = { type: 'url', src: url };
+    save(data);
+  }
+
+  // getCover returns either a dataURL string or an object {type:'url', src}
+  // Callers should handle both
