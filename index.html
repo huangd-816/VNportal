@@ -373,20 +373,17 @@
           <p>Merge tiles to reveal your vinyl cover art</p>
           <button class="btn-primary" id="play2048Btn">Play</button>
         </div>
-        <div class="game-card coming">
+        <div class="game-card coming" id="sleevePuzzleCard">
           <div class="game-icon">🧩</div>
           <h3>Sleeve Puzzle</h3>
-          <p>Reassemble your cover — coming soon</p>
+          <p>Reassemble your vinyl cover — drag pieces into place</p>
+          <button class="btn-primary" id="playPuzzleBtn">Play</button>
         </div>
-        <div class="game-card coming">
-          <div class="game-icon">🔤</div>
-          <h3>Lyric Crossword</h3>
-          <p>Keywords from your tracks — coming soon</p>
-        </div>
-        <div class="game-card coming">
-          <div class="game-icon">🎨</div>
-          <h3>Colour by Number</h3>
-          <p>Paint your cover pixel by pixel — coming soon</p>
+        <div class="game-card coming" id="trackMatchCard">
+          <div class="game-icon">🎵</div>
+          <h3>Track Match</h3>
+          <p>Match track titles to their artists — memory game</p>
+          <button class="btn-primary" id="playTrackMatchBtn">Play</button>
         </div>
       </div>
 
@@ -413,11 +410,41 @@
         <div class="g2048-board" id="board2048"></div>
         <p class="game-hint">Arrow keys to merge · Reach 2048 to reveal the full cover!</p>
       </div>
+
+      <!-- PUZZLE GAME -->
+      <div class="game-container hidden" id="puzzleContainer" style="display:none">
+        <div class="game-hud">
+          <span>Moves: <b id="puzzleMoves">0</b></span>
+          <select id="puzzleDiff" style="background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:.3rem .5rem;font-family:var(--font-m);font-size:.7rem">
+            <option value="3">3×3</option><option value="4">4×4</option><option value="5">5×5</option>
+          </select>
+          <button class="btn-secondary" id="puzzleShuffle" style="font-size:.65rem;padding:.35rem .7rem">⟳ Shuffle</button>
+          <button class="btn-secondary share-btn" id="sharePuzzleBtn">Share</button>
+          <button class="btn-secondary" id="closePuzzle">✕</button>
+        </div>
+        <canvas id="puzzleCanvas" width="480" height="480" style="display:block;border:1px solid var(--border)"></canvas>
+        <p class="game-hint">Drag pieces into position · snap to grid</p>
+      </div>
+
+      <!-- TRACK MATCH GAME -->
+      <div class="game-container hidden" id="trackMatchContainer" style="display:none">
+        <div class="game-hud">
+          <span>Moves: <b id="trackMatchMoves">0</b></span>
+          <span>Pairs: <b id="trackMatchPairs">0/0</b></span>
+          <span>Time: <b id="trackMatchTimer">0s</b></span>
+          <select id="trackMatchDiff" style="background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:.3rem .5rem;font-family:var(--font-m);font-size:.7rem">
+            <option value="4">4 pairs</option><option value="6" selected>6 pairs</option><option value="8">8 pairs</option>
+          </select>
+          <button class="btn-secondary share-btn" id="shareTrackMatchBtn">Share</button>
+          <button class="btn-secondary" id="closeTrackMatch">✕</button>
+        </div>
+        <div class="tmatch-board" id="trackMatchBoard"></div>
+        <p class="game-hint">Match track titles ♫ with their artists ◉</p>
+      </div>
     </section>
 
-    <!-- WORKSHOP -->
+    <!-- WORKSHOP (Phase 5) -->
     <section class="page" id="page-popular">
-      <!-- Vinyl recorder background -->
       <div class="workshop-recorder-bg" aria-hidden="true">
         <div class="recorder-body">
           <div class="recorder-platter">
@@ -428,13 +455,26 @@
           <div class="recorder-arm"></div>
         </div>
       </div>
-      <div class="page-header">
+      <div class="page-header" style="position:relative;z-index:1">
         <h1 class="page-title">Creative <em>Workshop</em></h1>
-        <p class="page-sub">Share your vinyls, covers, and scores</p>
+        <p class="page-sub">Your vinyl universe at a glance</p>
       </div>
-      <div class="coming-soon" style="position:relative;z-index:1">
-        <div class="cs-disc">◆</div>
-        <p>Community features coming in Phase 5<br/>Share · Discover · Discuss</p>
+      <div class="workshop-layout">
+        <!-- POPULARITY CHARTS -->
+        <div class="ws-section">
+          <div class="ws-section-title">🔥 Most Played</div>
+          <div id="workshopPopular" class="ws-list"></div>
+        </div>
+        <!-- COVER GALLERY -->
+        <div class="ws-section">
+          <div class="ws-section-title">🎨 Your Covers</div>
+          <div id="workshopCovers" class="ws-covers-grid"></div>
+        </div>
+        <!-- SCORE BOARD -->
+        <div class="ws-section">
+          <div class="ws-section-title">🏆 Game Scores</div>
+          <div id="workshopScores" class="ws-list"></div>
+        </div>
       </div>
     </section>
 
@@ -503,6 +543,9 @@
   <script src="public/js/cover.js"></script>
   <script src="public/js/snake.js"></script>
   <script src="public/js/game2048.js"></script>
+  <script src="public/js/puzzle.js"></script>
+  <script src="public/js/track-match.js"></script>
+  <script src="public/js/workshop.js"></script>
   <script src="public/js/spotify.js"></script>
   <script src="public/js/dj-mix.js"></script>
   <script src="public/js/app.js"></script>

@@ -1152,3 +1152,88 @@ body:has(.player-bar.visible) .main-content{padding-bottom:calc(var(--player-h) 
    GAMES — vinyl select in header
    ========================================== */
 .games-vinyl-select { margin-left: auto; display: flex; align-items: center; }
+
+/* ==========================================
+   PHASE 5 — WORKSHOP
+   ========================================== */
+.workshop-layout {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 2rem;
+  position: relative; z-index: 1;
+  margin-top: 1rem;
+}
+.ws-section { background: rgba(20,20,20,0.8); border: 1px solid var(--border); padding: 1.5rem; }
+.ws-section-title {
+  font-family: var(--font-d); font-size: 1.3rem; letter-spacing: .08em;
+  color: var(--accent); margin-bottom: 1rem; border-bottom: 1px solid var(--border); padding-bottom: .5rem;
+}
+.ws-empty { font-size: .72rem; color: var(--text-dim); letter-spacing: .08em; line-height: 2; }
+
+.ws-chart-row {
+  display: flex; align-items: center; gap: .75rem;
+  padding: .6rem 0; border-bottom: 1px solid var(--border);
+  font-size: .75rem;
+}
+.ws-rank { color: var(--text-dim); font-size: .62rem; min-width: 1.2rem; }
+.ws-thumb { width: 38px; height: 38px; border-radius: 50%; object-fit: cover; flex-shrink: 0; }
+.ws-thumb-placeholder { width: 38px; height: 38px; border-radius: 50%; background: var(--surface2); flex-shrink: 0; display:flex;align-items:center;justify-content:center;font-size:.8rem;color:var(--text-dim); }
+.ws-chart-info { flex: 1; overflow: hidden; }
+.ws-chart-title { color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ws-chart-artist { color: var(--text-dim); font-size: .62rem; }
+.ws-plays { color: var(--accent); font-size: .62rem; flex-shrink: 0; }
+
+.ws-score-row {
+  display: flex; align-items: center; gap: .75rem;
+  padding: .6rem 0; border-bottom: 1px solid var(--border); font-size: .75rem;
+}
+.ws-game-icon { font-size: 1.2rem; flex-shrink: 0; }
+.ws-score-info { flex: 1; }
+.ws-score-detail { color: var(--text); }
+.ws-score-date { color: var(--text-dim); font-size: .62rem; }
+.ws-share-btn {
+  background: transparent; border: 1px solid var(--border); color: var(--text-dim);
+  padding: .2rem .5rem; font-family: var(--font-m); font-size: .6rem;
+  cursor: pointer; flex-shrink: 0;
+  transition: all .18s;
+}
+.ws-share-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+.ws-covers-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(90px, 1fr)); gap: .75rem;
+}
+.ws-cover-item { text-align: center; }
+.ws-cover-img { width: 90px; height: 90px; border-radius: 50%; object-fit: cover; border: 1px solid var(--border); }
+.ws-cover-name { font-size: .6rem; color: var(--text-dim); margin-top: .3rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+@media(max-width:960px){ .workshop-layout{grid-template-columns:1fr;} }
+
+/* ==========================================
+   PHASE 4 — TRACK MATCH GAME
+   ========================================== */
+.tmatch-board {
+  display: grid; gap: 8px;
+  max-width: 640px; margin: 0 auto;
+}
+.tmatch-card {
+  background: var(--surface2); border: 1px solid var(--border);
+  border-radius: 4px; min-height: 72px;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; text-align: center; padding: .75rem .5rem;
+  font-size: .75rem; color: var(--text-dim);
+  transition: all .2s; position: relative; overflow: hidden;
+}
+.tmatch-card:hover:not(.matched) { border-color: var(--accent); color: var(--text); }
+.tmatch-card.flipped { background: var(--surface); border-color: var(--accent); color: var(--text); }
+.tmatch-card.matched { background: rgba(39,174,96,.12); border-color: #27ae60; color: #27ae60; cursor: default; }
+.tmatch-type-badge {
+  position: absolute; top: 4px; right: 6px;
+  font-size: .6rem; color: var(--accent); opacity: .7;
+}
+.tmatch-front, .tmatch-back { width: 100%; }
+
+/* ==========================================
+   GAME CONTAINERS — PROPER DISPLAY
+   ========================================== */
+.game-container.hidden { display: none !important; }
+.game-container:not(.hidden) { display: inline-block; }
