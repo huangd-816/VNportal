@@ -412,7 +412,7 @@
       </div>
 
       <!-- PUZZLE GAME -->
-      <div class="game-container hidden" id="puzzleContainer" style="display:none">
+      <div class="game-container hidden" id="puzzleContainer">
         <div class="game-hud">
           <span>Moves: <b id="puzzleMoves">0</b></span>
           <select id="puzzleDiff" style="background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:.3rem .5rem;font-family:var(--font-m);font-size:.7rem">
@@ -427,7 +427,7 @@
       </div>
 
       <!-- TRACK MATCH GAME -->
-      <div class="game-container hidden" id="trackMatchContainer" style="display:none">
+      <div class="game-container hidden" id="trackMatchContainer">
         <div class="game-hud">
           <span>Moves: <b id="trackMatchMoves">0</b></span>
           <span>Pairs: <b id="trackMatchPairs">0/0</b></span>
@@ -445,6 +445,7 @@
 
     <!-- WORKSHOP (Phase 5) -->
     <section class="page" id="page-popular">
+      <!-- Recorder: truly centered background -->
       <div class="workshop-recorder-bg" aria-hidden="true">
         <div class="recorder-body">
           <div class="recorder-platter">
@@ -474,6 +475,20 @@
         <div class="ws-section">
           <div class="ws-section-title">🏆 Game Scores</div>
           <div id="workshopScores" class="ws-list"></div>
+        </div>
+      </div>
+
+      <!-- DISCUSSION CHATBOX -->
+      <div class="ws-chat-section" style="position:relative;z-index:1;margin-top:2rem">
+        <div class="ws-section-title" style="font-family:var(--font-d);font-size:1.3rem;letter-spacing:.08em;color:var(--accent);margin-bottom:1rem">💬 Discussion</div>
+        <div class="ws-chat-wrap">
+          <div class="ws-chat-messages" id="chatMessages"></div>
+          <div class="ws-chat-input-row">
+            <input type="text" id="chatName" placeholder="Your name" class="ws-chat-name" maxlength="20" />
+            <input type="text" id="chatMsg" placeholder="Say something about your vinyl..." class="ws-chat-msg" maxlength="200" />
+            <button class="btn-primary" id="chatSend" style="flex-shrink:0">Send</button>
+          </div>
+          <p style="font-size:.6rem;color:var(--text-dim);margin-top:.4rem;letter-spacing:.05em">Messages are saved locally on your device · Phase 6 will sync with others</p>
         </div>
       </div>
     </section>

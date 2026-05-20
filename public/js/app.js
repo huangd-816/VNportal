@@ -26,23 +26,19 @@ const App = (() => {
     Game2048.init();
     Puzzle.init();
     TrackMatch.init();
+    Workshop.init();
     if(typeof DJMix!=='undefined')   DJMix.init();
     if(typeof Player!=='undefined')  Player.initUI();
     if(typeof Spotify!=='undefined') Spotify.init();
 
-    // Make new game cards active
+    // Make new game cards active (remove "coming soon" styling)
     document.getElementById('sleevePuzzleCard')?.classList.remove('coming');
     document.getElementById('trackMatchCard')?.classList.remove('coming');
 
-    // Force-hide all game containers on load
+    // All game containers start hidden via CSS class only — no inline style
     ['snakeContainer','game2048Container','puzzleContainer','trackMatchContainer'].forEach(id=>{
-      const el=document.getElementById(id);
-      if(el){el.classList.add('hidden');el.style.display='none';}
+      document.getElementById(id)?.classList.add('hidden');
     });
-
-    // Override game container show/hide to use style.display
-    const origPuzzleShow=document.getElementById('playPuzzleBtn');
-    const origMatchShow=document.getElementById('playTrackMatchBtn');
 
     navigate('exhibit');
 
@@ -52,11 +48,6 @@ const App = (() => {
       document.getElementById('npArtist').textContent=vinyl.tracks[0].artist;
     }
     document.getElementById('addVinylBtn')?.addEventListener('click',()=>navigate('search-vinyl'));
-
-    // Track plays for workshop
-    document.addEventListener('vnplay', e=>{
-      if(e.detail?.vinylId) Workshop.trackPlay(e.detail.vinylId);
-    });
   }
 
   return{init,navigate};
