@@ -943,3 +943,92 @@ body:has(.player-bar.visible) .main-content{padding-bottom:calc(var(--player-h) 
   line-height: 1.8;
   letter-spacing: .05em;
 }
+
+/* ==========================================
+   2048 — PROPER TILE SYSTEM (play2048 style)
+   ========================================== */
+.g2048-board {
+  position: relative !important;
+  width:  calc(4 * 110px + 5 * 8px) !important;
+  height: calc(4 * 110px + 5 * 8px) !important;
+  background: #1a1a2a !important;
+  border: 1px solid #333 !important;
+  border-radius: 6px;
+  overflow: hidden;
+  display: block !important;
+  grid-template-columns: unset !important;
+}
+.g2048-bg-cell {
+  position: absolute;
+  background: #252535;
+  border-radius: 4px;
+}
+.g2048-tile {
+  position: absolute;
+  border-radius: 4px;
+  display: flex; align-items: center; justify-content: center;
+  transition: left 100ms ease, top 100ms ease;
+  z-index: 2;
+  overflow: hidden;
+  will-change: left, top;
+}
+.g2048-tile .g2048-label {
+  font-family: var(--font-d);
+  font-size: 2rem;
+  letter-spacing: .03em;
+  position: relative; z-index: 3;
+  text-shadow: 0 1px 6px rgba(0,0,0,.8);
+}
+.g2048-spawn {
+  animation: tileSpawn .15s ease-out forwards;
+}
+@keyframes tileSpawn {
+  from { transform: scale(0); opacity:0; }
+  to   { transform: scale(1); opacity:1; }
+}
+.g2048-merge-pop {
+  animation: tilePop .18s ease-out forwards;
+}
+@keyframes tilePop {
+  0%   { transform: scale(1); }
+  50%  { transform: scale(1.2); }
+  100% { transform: scale(1); }
+}
+
+/* ==========================================
+   DJ — PER-DECK COLORS
+   ========================================== */
+#deckB { background: linear-gradient(160deg,#0e1a10 0%,#0a2010 60%,#0e1a10 100%) !important; }
+#deckA { background: linear-gradient(160deg,#10101e 0%,#0a1020 60%,#10101e 100%) !important; }
+
+/* Deck B sliders — blue */
+#deckB input[type="range"] { accent-color: #44aaff; }
+/* Deck A sliders — purple */
+#deckA input[type="range"] { accent-color: #9955ff; }
+/* EQ faders — white for both */
+#deckAHi, #deckAMid, #deckALo,
+#deckBHi, #deckBMid, #deckBLo { accent-color: #ffffff; }
+/* Deck labels */
+#deckA .deck-label { color: #7799ff; text-shadow: 0 0 20px #4466ff; }
+#deckB .deck-label { color: #44ff88; text-shadow: 0 0 20px #22cc66; }
+#deckA .deck-disc-label { background: linear-gradient(135deg,#4466ff,#2233aa); }
+#deckB .deck-disc-label { background: linear-gradient(135deg,#22cc66,#118844); }
+
+/* ==========================================
+   SHELF — ALIGN TO VINYL CARD HEIGHT
+   ========================================== */
+.shelf-row:nth-child(1) { top: calc(200px + 2.5rem); }
+.shelf-row:nth-child(2) { top: calc(400px + 5rem); }
+.shelf-row:nth-child(3) { top: calc(600px + 7.5rem); }
+.shelf-row:nth-child(4) { top: calc(800px + 10rem); }
+
+/* ==========================================
+   WORKSHOP RECORDER — START PAUSED
+   ========================================== */
+.recorder-vinyl { animation-play-state: paused; }
+.rec-light      { animation-play-state: paused; }
+
+/* ==========================================
+   SNAKE — BODY COLORS via CSS glow
+   ========================================== */
+#snakeCanvas { image-rendering: auto; }
