@@ -1,13 +1,9 @@
-// ============================================
-// VNportal — Vinyl Search (MusicBrainz + Cover Art)
-// Fixed: event.target undefined, CORS cover art,
-//        404 fallbacks, willReadFrequently
-// ============================================
 const VinylSearch = (() => {
   const MB   = 'https://musicbrainz.org/ws/2';
   const CAA  = 'https://coverartarchive.org';
   const HDRS = {'User-Agent':'VNportal/1.0 (github.com/huangd-816/VNportal)'};
   let activeFilter = 'all';
+  let cache = {};
 
   function init() {
     document.getElementById('vinylSearchBtn')?.addEventListener('click', doSearch);
@@ -29,8 +25,15 @@ const VinylSearch = (() => {
     const results=document.getElementById('searchResults');
     const empty=document.getElementById('searchEmpty');
     if(!results) return;
-    results.innerHTML='<div class="search-loading">◎ Searching vinyl database...</div>';
+
+    const cacheKey=`${q}:${activeFilter}`;
+    if(cache[cacheKey]){
+      results.innerHTML=''; cache[cacheKey].forEach(r=>renderCard(r,results)); return;
+    }
+
+    results.innerHTML='<div class="search-loading">◎ Searching...</div>';
     empty?.classList.add('hidden');
+    const loader=Notify.loading('Searching MusicBrainz database...');
 
     try {
       let typeFilter='';
@@ -40,31 +43,46 @@ const VinylSearch = (() => {
 
       const url=`${MB}/release/?query=${encodeURIComponent(q)}${typeFilter}&fmt=json&limit=16`;
       const res=await fetch(url,{headers:HDRS});
-      if(!res.ok) throw new Error('API error '+res.status);
+      if(!res.ok) throw new Error('MusicBrainz returned '+res.status);
       const data=await res.json();
       const releases=data.releases||[];
+      Notify.dismiss(loader);
 
       if(!releases.length){
         results.innerHTML='';
-        if(empty){empty.classList.remove('hidden');empty.textContent=`No results for "${q}"`;}
+        empty?.classList.remove('hidden');
+        if(empty) empty.textContent=`No results for "${q}"`;
+        Notify.warn(`No vinyl found for "${q}"`);
         return;
       }
 
+      cache[cacheKey]=releases;
       results.innerHTML='';
       releases.forEach(r=>renderCard(r,results));
+      Notify.success(`Found ${releases.length} results`);
     } catch(err) {
-      results.innerHTML=`<div class="search-loading" style="color:var(--accent2)">Search failed — check connection. (${err.message})</div>`;
+      Notify.dismiss(loader);
+      results.innerHTML='';
+      Notify.error(`Search failed: ${err.message}`);
+      const errEl=document.createElement('div');
+      errEl.className='search-error-inline';
+      errEl.innerHTML=`<span style="color:var(--accent2)">✕</span> Could not reach MusicBrainz.<br>
+        <span style="font-size:.65rem;color:var(--text-dim)">Check your internet connection and try again.</span>`;
+      results.appendChild(errEl);
     }
   }
 
   function renderCard(release, container) {
-    const mbid   = release.id;
-    const title  = release.title||'Unknown';
-    const artist = release['artist-credit']?.[0]?.name||'Unknown Artist';
-    const year   = release.date?.split('-')[0]||'—';
-    const tracks = release['track-count']||0;
-    const type   = release['release-group']?.['primary-type']||'';
-    const rgid   = release['release-group']?.id||'';
+    const mbid  =release.id;
+    const title =release.title||'Unknown';
+    const artist=release['artist-credit']?.[0]?.name||'Unknown Artist';
+    const year  =release.date?.split('-')[0]||'—';
+    const tracks=release['track-count']||0;
+    const type  =release['release-group']?.['primary-type']||'';
+    const rgid  =release['release-group']?.id||'';
+
+    const ytQuery=encodeURIComponent(`${title} ${artist} full album`);
+    const ytPreviewUrl=`https://www.youtube.com/results?search_query=${ytQuery}`;
 
     const card=document.createElement('div');
     card.className='search-card';
@@ -78,28 +96,27 @@ const VinylSearch = (() => {
         <div class="search-card-meta">${year} · ${type||'Release'} · ${tracks} tracks</div>
       </div>
       <div class="search-card-actions">
-        <button class="btn-primary" style="font-size:.62rem;padding:.4rem .75rem" 
-          data-mbid="${mbid}" data-rgid="${rgid}" 
-          data-title="${esc(title)}" data-artist="${esc(artist)}" 
-          data-year="${year}" data-type="${esc(type)}" data-tracks="${tracks}">
-          + Add to Exhibit
+        <button class="btn-primary" style="font-size:.6rem;padding:.35rem .65rem"
+          data-mbid="${mbid}" data-rgid="${rgid}" data-title="${esc(title)}"
+          data-artist="${esc(artist)}" data-year="${year}" data-type="${esc(type)}">
+          + Add
         </button>
-        <button class="btn-secondary" style="font-size:.62rem;padding:.4rem .65rem" 
+        <a class="btn-secondary" href="${ytPreviewUrl}" target="_blank"
+          style="font-size:.6rem;padding:.35rem .55rem;text-decoration:none;display:inline-block">
+          ▶ Preview
+        </a>
+        <button class="btn-secondary" style="font-size:.6rem;padding:.35rem .55rem"
           onclick="window.open('https://musicbrainz.org/release/${mbid}','_blank')">
           Details
         </button>
       </div>
     `;
 
-    // Add button handler — pass button element directly, no event dependency
-    const addBtn=card.querySelector('[data-mbid]');
-    addBtn.addEventListener('click', function() {
+    card.querySelector('[data-mbid]').addEventListener('click', function() {
       importRelease(this, release, rgid);
     });
 
     container.appendChild(card);
-
-    // Load cover art — img tag avoids CORS issues for display
     loadCoverImg(mbid, rgid, card.querySelector(`#art-${mbid}`));
   }
 
@@ -108,41 +125,35 @@ const VinylSearch = (() => {
     const img=document.createElement('img');
     img.style.cssText='width:100%;height:100%;object-fit:cover;display:none';
     img.alt='';
-
-    // Try release cover first, then release-group cover
-    const tryUrls=[
+    const urls=[
       `${CAA}/release/${mbid}/front-250`,
       rgid?`${CAA}/release-group/${rgid}/front-250`:'',
     ].filter(Boolean);
-
     let idx=0;
-    function tryNext(){
-      if(idx>=tryUrls.length) return; // keep placeholder
-      img.src=tryUrls[idx++];
+    function next(){
+      if(idx>=urls.length) return;
+      img.src=urls[idx++];
     }
-
     img.onload=()=>{
       img.style.display='block';
-      const ph=artEl.querySelector('.search-art-placeholder');
-      if(ph) ph.style.display='none';
+      artEl.querySelector('.search-art-placeholder')?.remove();
     };
-    img.onerror=tryNext;
-
+    img.onerror=next;
     artEl.appendChild(img);
-    tryNext();
+    next();
   }
 
   async function importRelease(btn, release, rgid) {
-    const mbid  = release.id;
-    const title = release.title;
-    const artist= release['artist-credit']?.[0]?.name||'Unknown';
-    const year  = release.date?.split('-')[0]||'';
-    const type  = release['release-group']?.['primary-type']||'Album';
+    const mbid  =release.id;
+    const title =release.title;
+    const artist=release['artist-credit']?.[0]?.name||'Unknown';
+    const year  =release.date?.split('-')[0]||'';
+    const type  =release['release-group']?.['primary-type']||'Album';
 
     btn.textContent='Loading...';
     btn.disabled=true;
+    const loader=Notify.loading(`Importing "${title}"...`);
 
-    // Fetch tracklist
     let tracks=[];
     try {
       const res=await fetch(`${MB}/release/${mbid}?inc=recordings&fmt=json`,{headers:HDRS});
@@ -153,57 +164,53 @@ const VinylSearch = (() => {
             title:  t.title,
             artist: t['artist-credit']?.[0]?.name||artist,
             hasLocal:false, youtubeUrl:null,
+            youtubePreview:`https://www.youtube.com/results?search_query=${encodeURIComponent(t.title+' '+artist)}`
           });
         });
       });
-    } catch{}
+    } catch(e){
+      Notify.warn('Could not load full tracklist — album added with basic info');
+    }
 
     const vinyl=Store.addVinyl({name:title,artist,year,type,genre:'unknown',mbid,source:'musicbrainz',tracks});
-
-    // Save cover art — use img element to avoid CORS, then draw to canvas
     saveCoverArt(vinyl.id, mbid, rgid);
-
     Exhibit.render();
+    Notify.dismiss(loader);
+    Notify.success(`"${title}" added to your exhibit!`);
+
     btn.textContent='✓ Added!';
     btn.style.background='#27ae60';
-    setTimeout(()=>{ btn.textContent='+ Add to Exhibit'; btn.style.background=''; btn.disabled=false; },2000);
+    setTimeout(()=>{ btn.textContent='+ Add'; btn.style.background=''; btn.disabled=false; },2000);
     setTimeout(()=>App.navigate('exhibit'),1500);
   }
 
   function saveCoverArt(vinylId, mbid, rgid) {
-    // Draw into an offscreen canvas via img element to handle CORS gracefully
-    const tryUrls=[
+    const urls=[
       `${CAA}/release/${mbid}/front`,
       rgid?`${CAA}/release-group/${rgid}/front`:'',
     ].filter(Boolean);
-
     let idx=0;
     function tryNext(){
-      if(idx>=tryUrls.length) return;
+      if(idx>=urls.length) return;
       const img=new Image();
       img.crossOrigin='anonymous';
       img.onload=()=>{
         try {
-          const c=document.createElement('canvas');
-          c.width=c.height=500;
-          const cx=c.getContext('2d');
-          cx.drawImage(img,0,0,500,500);
+          const c=document.createElement('canvas'); c.width=c.height=500;
+          c.getContext('2d').drawImage(img,0,0,500,500);
           Store.saveCover(vinylId,c.toDataURL('image/jpeg',0.85));
           Exhibit.render();
         } catch {
-          // CORS blocked canvas taint — save img src as cover URL alternative
-          // Store the URL directly so exhibit can use it as <img src>
-          Store.saveCoverUrl(vinylId, img.src);
+          Store.saveCoverUrl(vinylId,img.src);
           Exhibit.render();
         }
       };
       img.onerror=tryNext;
-      img.src=tryUrls[idx++];
+      img.src=urls[idx++];
     }
     tryNext();
   }
 
   function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
-
   return{init};
 })();
