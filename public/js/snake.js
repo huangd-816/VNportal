@@ -2,8 +2,8 @@ const Snake = (() => {
   const CELL=24,COLS=20,ROWS=20,W=480,H=480;
   let canvas,ctx,snake,dir,nextDir,food,score,highScore,loop,alive,paused;
   let coverImg=null;
-  // Vivid rainbow palette — each segment gets its own color
-  const RAINBOW=['#FF3366','#FF6633','#FFCC00','#33FF66','#33CCFF','#6633FF','#FF33CC','#00FFCC','#FF9933','#99FF33'];
+  // Dimmer vivid rainbow — less "screaming"
+  const RAINBOW=['#cc2255','#cc5522','#ccaa00','#22aa55','#2288cc','#5522cc','#cc2299','#00ccaa','#cc7722','#77cc22'];
 
   function init() {
     canvas=document.getElementById('snakeCanvas'); if(!canvas) return;
@@ -96,7 +96,7 @@ const Snake = (() => {
       ctx.globalAlpha=opacity;
 
       // Glow effect
-      ctx.shadowColor=col; ctx.shadowBlur=isHead?16:8;
+      ctx.shadowColor=col; ctx.shadowBlur=isHead?10:4;
       ctx.fillStyle=col;
       rRect(ctx,x+pad,y+pad,CELL-pad*2,CELL-pad*2,isHead?8:5);
       ctx.fill();

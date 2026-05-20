@@ -2,8 +2,7 @@ const VinylSearch = (() => {
   const MB   = 'https://musicbrainz.org/ws/2';
   const CAA  = 'https://coverartarchive.org';
   const HDRS = {'User-Agent':'VNportal/1.0 (github.com/huangd-816/VNportal)'};
-  let activeFilter = 'all';
-  let cache = {};
+  let activeFilter='all', cache={};
 
   function init() {
     document.getElementById('vinylSearchBtn')?.addEventListener('click', doSearch);
@@ -13,76 +12,122 @@ const VinylSearch = (() => {
     document.querySelectorAll('.filter-btn').forEach(btn=>{
       btn.addEventListener('click',()=>{
         document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));
-        btn.classList.add('active');
-        activeFilter=btn.dataset.filter;
+        btn.classList.add('active'); activeFilter=btn.dataset.filter;
       });
     });
   }
 
   async function doSearch() {
-    const q=document.getElementById('vinylSearchInput')?.value?.trim();
-    if(!q) return;
+    const q=document.getElementById('vinylSearchInput')?.value?.trim(); if(!q) return;
+    const searchType=document.getElementById('searchTypeSelect')?.value||'release';
     const results=document.getElementById('searchResults');
     const empty=document.getElementById('searchEmpty');
     if(!results) return;
 
-    const cacheKey=`${q}:${activeFilter}`;
-    if(cache[cacheKey]){
-      results.innerHTML=''; cache[cacheKey].forEach(r=>renderCard(r,results)); return;
-    }
+    const cacheKey=`${q}:${activeFilter}:${searchType}`;
+    if(cache[cacheKey]){renderCached(cache[cacheKey],results,searchType);return;}
 
     results.innerHTML='<div class="search-loading">◎ Searching...</div>';
     empty?.classList.add('hidden');
-    const loader=Notify.loading('Searching MusicBrainz database...');
+    const loader=Notify.loading(`Searching for "${q}"...`);
 
     try {
-      let typeFilter='';
-      if(activeFilter==='album')  typeFilter=' AND primarytype:Album';
-      if(activeFilter==='ep')     typeFilter=' AND primarytype:EP';
-      if(activeFilter==='single') typeFilter=' AND primarytype:Single';
+      let data, releases=[];
+      if(searchType==='artist'){
+        // Search artists then get their releases
+        const res=await fetch(`${MB}/artist/?query=${encodeURIComponent(q)}&fmt=json&limit=8`,{headers:HDRS});
+        data=await res.json();
+        Notify.dismiss(loader);
+        const artists=data.artists||[];
+        if(!artists.length){results.innerHTML='';Notify.warn(`No artists found for "${q}"`);return;}
+        renderArtists(artists,results);
+        return;
+      } else if(searchType==='recording'){
+        const res=await fetch(`${MB}/recording/?query=${encodeURIComponent(q)}&fmt=json&limit=12`,{headers:HDRS});
+        data=await res.json();
+        releases=(data.recordings||[]).map(r=>({
+          id: r.releases?.[0]?.id,
+          title: r.releases?.[0]?.title||r.title,
+          'artist-credit': r['artist-credit'],
+          date: r.releases?.[0]?.date,
+          'track-count': 1,
+          'release-group': r.releases?.[0]?.['release-group'],
+          _trackTitle: r.title,
+        })).filter(r=>r.id);
+      } else {
+        let typeFilter='';
+        if(activeFilter==='album')  typeFilter=' AND primarytype:Album';
+        if(activeFilter==='ep')     typeFilter=' AND primarytype:EP';
+        if(activeFilter==='single') typeFilter=' AND primarytype:Single';
+        const res=await fetch(`${MB}/release/?query=${encodeURIComponent(q)}${typeFilter}&fmt=json&limit=16`,{headers:HDRS});
+        data=await res.json();
+        releases=data.releases||[];
+      }
 
-      const url=`${MB}/release/?query=${encodeURIComponent(q)}${typeFilter}&fmt=json&limit=16`;
-      const res=await fetch(url,{headers:HDRS});
-      if(!res.ok) throw new Error('MusicBrainz returned '+res.status);
-      const data=await res.json();
-      const releases=data.releases||[];
       Notify.dismiss(loader);
-
       if(!releases.length){
         results.innerHTML='';
         empty?.classList.remove('hidden');
-        if(empty) empty.textContent=`No results for "${q}"`;
-        Notify.warn(`No vinyl found for "${q}"`);
+        if(empty)empty.textContent=`No results for "${q}"`;
+        Notify.warn(`No results found`);
         return;
       }
-
       cache[cacheKey]=releases;
       results.innerHTML='';
       releases.forEach(r=>renderCard(r,results));
       Notify.success(`Found ${releases.length} results`);
-    } catch(err) {
+    } catch(err){
       Notify.dismiss(loader);
-      results.innerHTML='';
+      results.innerHTML=`<div class="search-error-inline">✕ Search failed: ${err.message}</div>`;
       Notify.error(`Search failed: ${err.message}`);
-      const errEl=document.createElement('div');
-      errEl.className='search-error-inline';
-      errEl.innerHTML=`<span style="color:var(--accent2)">✕</span> Could not reach MusicBrainz.<br>
-        <span style="font-size:.65rem;color:var(--text-dim)">Check your internet connection and try again.</span>`;
-      results.appendChild(errEl);
     }
   }
 
+  function renderCached(releases,results,type){
+    results.innerHTML=''; releases.forEach(r=>renderCard(r,results));
+  }
+
+  function renderArtists(artists, container){
+    container.innerHTML='';
+    Notify.success(`Found ${artists.length} artists`);
+    artists.forEach(artist=>{
+      const card=document.createElement('div');
+      card.className='search-card';
+      card.innerHTML=`
+        <div class="search-card-art" style="display:flex;align-items:center;justify-content:center;background:var(--surface)">
+          <span style="font-size:3rem;opacity:.3">◉</span>
+        </div>
+        <div class="search-card-info">
+          <div class="search-card-title">${esc(artist.name)}</div>
+          <div class="search-card-artist">${artist.country||''} ${artist.disambiguation?`(${artist.disambiguation})`:''}</div>
+          <div class="search-card-meta">${artist['life-span']?.begin||''}${artist['life-span']?.ended?' (inactive)':''}</div>
+        </div>
+        <div class="search-card-actions">
+          <button class="btn-primary" style="font-size:.6rem;padding:.35rem .65rem" data-artist-id="${artist.id}" data-artist-name="${esc(artist.name)}">Browse Albums</button>
+          <button class="btn-secondary" style="font-size:.6rem;padding:.35rem .55rem"
+            onclick="window.open('https://musicbrainz.org/artist/${artist.id}','_blank')">Details</button>
+        </div>
+      `;
+      card.querySelector('[data-artist-id]').addEventListener('click', function(){
+        const name=this.dataset.artistName;
+        document.getElementById('vinylSearchInput').value=name;
+        document.getElementById('searchTypeSelect').value='release';
+        doSearch();
+      });
+      container.appendChild(card);
+    });
+  }
+
   function renderCard(release, container) {
+    if(!release.id) return;
     const mbid  =release.id;
     const title =release.title||'Unknown';
-    const artist=release['artist-credit']?.[0]?.name||'Unknown Artist';
+    const artist=release['artist-credit']?.[0]?.name||'Unknown';
     const year  =release.date?.split('-')[0]||'—';
     const tracks=release['track-count']||0;
     const type  =release['release-group']?.['primary-type']||'';
     const rgid  =release['release-group']?.id||'';
-
-    const ytQuery=encodeURIComponent(`${title} ${artist} full album`);
-    const ytPreviewUrl=`https://www.youtube.com/results?search_query=${ytQuery}`;
+    const ytQuery=encodeURIComponent(`${title} ${artist}`);
 
     const card=document.createElement('div');
     card.className='search-card';
@@ -97,25 +142,16 @@ const VinylSearch = (() => {
       </div>
       <div class="search-card-actions">
         <button class="btn-primary" style="font-size:.6rem;padding:.35rem .65rem"
-          data-mbid="${mbid}" data-rgid="${rgid}" data-title="${esc(title)}"
-          data-artist="${esc(artist)}" data-year="${year}" data-type="${esc(type)}">
-          + Add
-        </button>
-        <a class="btn-secondary" href="${ytPreviewUrl}" target="_blank"
-          style="font-size:.6rem;padding:.35rem .55rem;text-decoration:none;display:inline-block">
-          ▶ Preview
-        </a>
-        <button class="btn-secondary" style="font-size:.6rem;padding:.35rem .55rem"
-          onclick="window.open('https://musicbrainz.org/release/${mbid}','_blank')">
-          Details
-        </button>
+          data-mbid="${mbid}" data-rgid="${rgid}">+ Add</button>
+        <a class="btn-secondary" href="https://music.youtube.com/search?q=${ytQuery}" target="_blank"
+          style="font-size:.6rem;padding:.35rem .5rem;text-decoration:none;display:inline-flex;align-items:center;gap:.3rem">▶ Preview</a>
+        <button class="btn-secondary" style="font-size:.6rem;padding:.35rem .5rem"
+          onclick="window.open('https://musicbrainz.org/release/${mbid}','_blank')">Details</button>
       </div>
     `;
-
-    card.querySelector('[data-mbid]').addEventListener('click', function() {
+    card.querySelector('[data-mbid]').addEventListener('click', function(){
       importRelease(this, release, rgid);
     });
-
     container.appendChild(card);
     loadCoverImg(mbid, rgid, card.querySelector(`#art-${mbid}`));
   }
@@ -123,24 +159,13 @@ const VinylSearch = (() => {
   function loadCoverImg(mbid, rgid, artEl) {
     if(!artEl) return;
     const img=document.createElement('img');
-    img.style.cssText='width:100%;height:100%;object-fit:cover;display:none';
-    img.alt='';
-    const urls=[
-      `${CAA}/release/${mbid}/front-250`,
-      rgid?`${CAA}/release-group/${rgid}/front-250`:'',
-    ].filter(Boolean);
+    img.style.cssText='width:100%;height:100%;object-fit:cover;display:none'; img.alt='';
+    const urls=[`${CAA}/release/${mbid}/front-250`, rgid?`${CAA}/release-group/${rgid}/front-250`:''].filter(Boolean);
     let idx=0;
-    function next(){
-      if(idx>=urls.length) return;
-      img.src=urls[idx++];
-    }
-    img.onload=()=>{
-      img.style.display='block';
-      artEl.querySelector('.search-art-placeholder')?.remove();
-    };
+    function next(){if(idx>=urls.length)return;img.src=urls[idx++];}
+    img.onload=()=>{img.style.display='block';artEl.querySelector('.search-art-placeholder')?.remove();};
     img.onerror=next;
-    artEl.appendChild(img);
-    next();
+    artEl.appendChild(img); next();
   }
 
   async function importRelease(btn, release, rgid) {
@@ -150,8 +175,7 @@ const VinylSearch = (() => {
     const year  =release.date?.split('-')[0]||'';
     const type  =release['release-group']?.['primary-type']||'Album';
 
-    btn.textContent='Loading...';
-    btn.disabled=true;
+    btn.textContent='Loading...'; btn.disabled=true;
     const loader=Notify.loading(`Importing "${title}"...`);
 
     let tracks=[];
@@ -161,16 +185,13 @@ const VinylSearch = (() => {
       (data.media||[]).forEach(m=>{
         (m.tracks||[]).forEach(t=>{
           tracks.push({
-            title:  t.title,
-            artist: t['artist-credit']?.[0]?.name||artist,
+            title:t.title, artist:t['artist-credit']?.[0]?.name||artist,
             hasLocal:false, youtubeUrl:null,
-            youtubePreview:`https://www.youtube.com/results?search_query=${encodeURIComponent(t.title+' '+artist)}`
+            youtubePreview:`https://music.youtube.com/search?q=${encodeURIComponent(t.title+' '+artist)}`
           });
         });
       });
-    } catch(e){
-      Notify.warn('Could not load full tracklist — album added with basic info');
-    }
+    } catch{Notify.warn('Could not load full tracklist');}
 
     const vinyl=Store.addVinyl({name:title,artist,year,type,genre:'unknown',mbid,source:'musicbrainz',tracks});
     saveCoverArt(vinyl.id, mbid, rgid);
@@ -178,35 +199,26 @@ const VinylSearch = (() => {
     Notify.dismiss(loader);
     Notify.success(`"${title}" added to your exhibit!`);
 
-    btn.textContent='✓ Added!';
-    btn.style.background='#27ae60';
-    setTimeout(()=>{ btn.textContent='+ Add'; btn.style.background=''; btn.disabled=false; },2000);
+    btn.textContent='✓ Added!'; btn.style.background='#27ae60';
+    setTimeout(()=>{btn.textContent='+ Add';btn.style.background='';btn.disabled=false;},2000);
     setTimeout(()=>App.navigate('exhibit'),1500);
   }
 
   function saveCoverArt(vinylId, mbid, rgid) {
-    const urls=[
-      `${CAA}/release/${mbid}/front`,
-      rgid?`${CAA}/release-group/${rgid}/front`:'',
-    ].filter(Boolean);
+    const urls=[`${CAA}/release/${mbid}/front`, rgid?`${CAA}/release-group/${rgid}/front`:''].filter(Boolean);
     let idx=0;
     function tryNext(){
-      if(idx>=urls.length) return;
-      const img=new Image();
-      img.crossOrigin='anonymous';
+      if(idx>=urls.length)return;
+      const img=new Image(); img.crossOrigin='anonymous';
       img.onload=()=>{
-        try {
-          const c=document.createElement('canvas'); c.width=c.height=500;
+        try{
+          const c=document.createElement('canvas');c.width=c.height=500;
           c.getContext('2d').drawImage(img,0,0,500,500);
           Store.saveCover(vinylId,c.toDataURL('image/jpeg',0.85));
-          Exhibit.render();
-        } catch {
-          Store.saveCoverUrl(vinylId,img.src);
-          Exhibit.render();
-        }
+        }catch{Store.saveCoverUrl(vinylId,img.src);}
+        Exhibit.render();
       };
-      img.onerror=tryNext;
-      img.src=urls[idx++];
+      img.onerror=tryNext; img.src=urls[idx++];
     }
     tryNext();
   }

@@ -81,7 +81,12 @@
         <p class="page-sub">Search the global music database</p>
       </div>
       <div class="search-bar-wrap">
-        <input type="text" id="vinylSearchInput" placeholder="Album or artist name..." class="search-input" />
+        <input type="text" id="vinylSearchInput" placeholder="Album, artist, or track name..." class="search-input" />
+        <select id="searchTypeSelect" style="background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:.8rem .75rem;font-family:var(--font-m);font-size:.78rem;outline:none;cursor:pointer;flex-shrink:0">
+          <option value="release">Albums</option>
+          <option value="artist">Artists</option>
+          <option value="recording">Tracks</option>
+        </select>
         <button class="btn-primary" id="vinylSearchBtn">Search</button>
       </div>
       <div class="search-filters">
@@ -348,6 +353,12 @@
       <div class="page-header">
         <h1 class="page-title">Vinyl <em>Games</em></h1>
         <p class="page-sub">Powered by your collection</p>
+        <div class="games-vinyl-select">
+          <label style="font-size:.62rem;color:var(--text-dim);letter-spacing:.15em;text-transform:uppercase;margin-right:.5rem">Playing with:</label>
+          <select id="gamesVinylSelect" style="background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:.4rem .75rem;font-family:var(--font-m);font-size:.72rem;outline:none;cursor:pointer">
+            <option value="">— Pick a vinyl —</option>
+          </select>
+        </div>
       </div>
       <div class="games-grid">
         <div class="game-card" id="snakeCard">
@@ -410,16 +421,11 @@
       <div class="workshop-recorder-bg" aria-hidden="true">
         <div class="recorder-body">
           <div class="recorder-platter">
-            <div class="recorder-vinyl spinning-slow">
-              <div class="recorder-label"></div>
+            <div class="recorder-vinyl" id="workshopVinyl">
+              <div class="recorder-label" id="workshopLabel"></div>
             </div>
           </div>
           <div class="recorder-arm"></div>
-          <div class="recorder-lights">
-            <div class="rec-light" style="--h:0deg"></div>
-            <div class="rec-light" style="--h:120deg"></div>
-            <div class="rec-light" style="--h:240deg"></div>
-          </div>
         </div>
       </div>
       <div class="page-header">
@@ -456,12 +462,18 @@
   <!-- PLAYER BAR -->
   <div class="player-bar" id="playerBar">
     <div class="player-disc-wrap">
-      <div class="player-disc spinning" id="playerDisc"></div>
+      <div class="player-disc-cover-wrap">
+        <img id="playerCoverImg" class="player-cover-img" src="" alt="" />
+        <div class="player-disc spinning" id="playerDisc"></div>
+      </div>
     </div>
     <div class="player-track-info">
       <div class="player-track-title" id="playerTrackTitle">—</div>
       <div class="player-track-artist" id="playerTrackArtist">—</div>
-      <div class="player-vinyl-name" id="playerVinylName">—</div>
+      <div class="player-lyrics" id="playerLyrics">
+        <span id="playerLyricsText">♫ no track playing</span>
+        <a id="playerLyricsLink" href="#" target="_blank" class="lyrics-search-link" style="display:none">Find lyrics ↗</a>
+      </div>
     </div>
     <div class="player-controls">
       <button class="player-btn" id="playerPrevBtn">⏮</button>
