@@ -2,8 +2,11 @@ const Snake = (() => {
   const CELL=24,COLS=20,ROWS=20,W=480,H=480;
   let canvas,ctx,snake,dir,nextDir,food,score,highScore,loop,alive,paused;
   let coverImg=null;
-  // Dimmer vivid rainbow — less "screaming"
-  const RAINBOW=['#cc2255','#cc5522','#ccaa00','#22aa55','#2288cc','#5522cc','#cc2299','#00ccaa','#cc7722','#77cc22'];
+  // Plain single-hue palette — body and apple share the same color family
+  // Head = bright accent, body fades from same hue, apple = same accent
+  const HEAD_COLOR  = '#f5c518';  // yellow
+  const BODY_COLORS = ['#e8b800','#d4a500','#c09200','#ac8000','#987000','#846000','#705200','#5c4400'];
+  const APPLE_COLOR = '#f5c518';
 
   function init() {
     canvas=document.getElementById('snakeCanvas'); if(!canvas) return;
@@ -85,56 +88,49 @@ const Snake = (() => {
 
     drawFood();
 
-    // Snake body — vivid color per segment
+    // Snake body — same hue family, fading from head
     snake.forEach((seg,i)=>{
       const isHead=i===0;
-      // Each segment gets its own vivid color from rainbow
-      const col=RAINBOW[i%RAINBOW.length];
-      const opacity=Math.max(0.55, 1-(i/snake.length)*0.4);
+      const col=isHead?HEAD_COLOR:BODY_COLORS[Math.min(i-1,BODY_COLORS.length-1)];
+      const opacity=Math.max(0.5, 1-(i/snake.length)*0.45);
       const x=seg.x*CELL,y=seg.y*CELL,pad=isHead?0:2;
 
       ctx.globalAlpha=opacity;
-
-      // Glow effect
-      ctx.shadowColor=col; ctx.shadowBlur=isHead?10:4;
+      ctx.shadowColor=col; ctx.shadowBlur=isHead?8:3;
       ctx.fillStyle=col;
       rRect(ctx,x+pad,y+pad,CELL-pad*2,CELL-pad*2,isHead?8:5);
       ctx.fill();
       ctx.shadowBlur=0; ctx.globalAlpha=1;
 
-      // Head: bright outline + eyes
       if(isHead){
-        ctx.strokeStyle='rgba(255,255,255,0.6)'; ctx.lineWidth=1.5;
+        ctx.strokeStyle='rgba(255,255,255,0.4)'; ctx.lineWidth=1.5;
         rRect(ctx,x+1,y+1,CELL-2,CELL-2,8); ctx.stroke();
         ctx.fillStyle='#000';
         const[x1,y1,x2,y2]=eyes(seg.x*CELL,seg.y*CELL);
         ctx.beginPath();ctx.arc(x1,y1,2.5,0,Math.PI*2);ctx.fill();
         ctx.beginPath();ctx.arc(x2,y2,2.5,0,Math.PI*2);ctx.fill();
-        // White dot pupils
-        ctx.fillStyle='#fff';
-        ctx.beginPath();ctx.arc(x1-0.5,y1-0.5,1,0,Math.PI*2);ctx.fill();
-        ctx.beginPath();ctx.arc(x2-0.5,y2-0.5,1,0,Math.PI*2);ctx.fill();
+        ctx.fillStyle='rgba(255,255,255,0.7)';
+        ctx.beginPath();ctx.arc(x1-.5,y1-.5,1,0,Math.PI*2);ctx.fill();
+        ctx.beginPath();ctx.arc(x2-.5,y2-.5,1,0,Math.PI*2);ctx.fill();
       }
     });
   }
 
   function drawFood(){
     const cx=food.x*CELL+CELL/2,cy=food.y*CELL+CELL/2,r=CELL/2-2;
-    // Vivid apple — cycle through colors based on position
-    const appleColor=RAINBOW[(food.x+food.y)%RAINBOW.length];
-    ctx.shadowColor=appleColor; ctx.shadowBlur=14;
+    // Apple same accent color as snake head
+    ctx.shadowColor=APPLE_COLOR; ctx.shadowBlur=10;
     ctx.beginPath(); ctx.arc(cx,cy,r,0,Math.PI*2);
-    // Gradient fill
     const grad=ctx.createRadialGradient(cx-3,cy-3,2,cx,cy,r);
-    grad.addColorStop(0,'rgba(255,255,255,0.9)');
-    grad.addColorStop(0.3,appleColor);
-    grad.addColorStop(1,'rgba(0,0,0,0.5)');
+    grad.addColorStop(0,'rgba(255,255,220,0.9)');
+    grad.addColorStop(0.4,APPLE_COLOR);
+    grad.addColorStop(1,'rgba(120,90,0,0.8)');
     ctx.fillStyle=grad; ctx.fill();
     ctx.shadowBlur=0;
-    // Shine dot
-    ctx.fillStyle='rgba(255,255,255,0.6)';
-    ctx.beginPath(); ctx.arc(cx-3,cy-3,2.5,0,Math.PI*2); ctx.fill();
-    // Center hole if cover shown
+    // Shine
+    ctx.fillStyle='rgba(255,255,255,0.5)';
+    ctx.beginPath(); ctx.arc(cx-3,cy-3,2,0,Math.PI*2); ctx.fill();
+    // Cover patch in center if available
     if(coverImg){
       ctx.save();
       ctx.beginPath();ctx.arc(cx,cy,r*.4,0,Math.PI*2);ctx.clip();
@@ -142,6 +138,7 @@ const Snake = (() => {
       ctx.drawImage(coverImg,sx,sy,coverImg.width/COLS*2,coverImg.height/ROWS*2,cx-r*.4,cy-r*.4,r*.8,r*.8);
       ctx.restore();
     }
+    ctx.beginPath();ctx.arc(cx,cy,2,0,Math.PI*2);ctx.fillStyle='rgba(0,0,0,0.5)';ctx.fill();
   }
 
   function eyes(hx,hy){

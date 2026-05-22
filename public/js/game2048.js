@@ -1,25 +1,21 @@
-// ============================================
-// VNportal — Vinyl 2048 (play2048.co style)
-// Proper CSS transition with real DOM tile management
-// ============================================
 const Game2048 = (() => {
   const SIZE=4, TILE=110, GAP=8;
   let grid=[], tileEls={}, nextId=0, score=0, won=false;
   let best=parseInt(localStorage.getItem('vn_2048_best')||'0');
   let coverSrc=null, moving=false;
+  let history=[];  // undo stack: [{grid snapshot, score}]
 
-  // Very distinct colors per value
   const TILE_STYLES={
-    2:   {bg:'#3d2c5a',fg:'#c8b0f0',border:'#6a4aaa'},
-    4:   {bg:'#4a1a3a',fg:'#f0a0d0',border:'#aa3080'},
-    8:   {bg:'#5a2800',fg:'#ffaa44',border:'#cc6600'},
-    16:  {bg:'#7a1a00',fg:'#ff6633',border:'#ee3300'},
-    32:  {bg:'#004a20',fg:'#44ff88',border:'#00aa44'},
-    64:  {bg:'#003060',fg:'#44aaff',border:'#0066cc'},
-    128: {bg:'#4a0060',fg:'#cc44ff',border:'#8800cc'},
-    256: {bg:'#604000',fg:'#ffcc00',border:'#cc8800'},
-    512: {bg:'#006040',fg:'#00ffcc',border:'#008855'},
-    1024:{bg:'#600030',fg:'#ff4488',border:'#cc0055'},
+    2:   {bg:'#2a2040',fg:'#9988cc',border:'#443366'},
+    4:   {bg:'#3a1830',fg:'#cc88bb',border:'#662255'},
+    8:   {bg:'#4a2200',fg:'#dd9944',border:'#884400'},
+    16:  {bg:'#5a1800',fg:'#ee7733',border:'#992200'},
+    32:  {bg:'#003a18',fg:'#33cc77',border:'#006633'},
+    64:  {bg:'#002244',fg:'#4499dd',border:'#004488'},
+    128: {bg:'#380050',fg:'#bb44ee',border:'#660099'},
+    256: {bg:'#4a3000',fg:'#ddaa00',border:'#886600'},
+    512: {bg:'#004438',fg:'#00ddbb',border:'#007755'},
+    1024:{bg:'#440022',fg:'#ff3388',border:'#880044'},
     2048:{bg:'#f5c518',fg:'#000000',border:'#ffdd44'},
   };
 
@@ -27,6 +23,7 @@ const Game2048 = (() => {
     document.getElementById('play2048Btn')?.addEventListener('click', show);
     document.getElementById('close2048')?.addEventListener('click',  hide);
     document.getElementById('share2048Btn')?.addEventListener('click', shareScore);
+    document.getElementById('undo2048Btn')?.addEventListener('click', undo);
     window.addEventListener('keydown', handleKey);
     const b=document.getElementById('board2048');
     if(b){
@@ -54,17 +51,16 @@ const Game2048 = (() => {
 
   function startGame(){
     grid=Array.from({length:SIZE},()=>Array(SIZE).fill(null));
-    tileEls={}; nextId=0; score=0; won=false; moving=false;
+    tileEls={}; nextId=0; score=0; won=false; moving=false; history=[];
     setupBoard();
     spawn(); spawn();
     updateHUD();
+    removeOverlays();
   }
 
   function setupBoard(){
-    const b=document.getElementById('board2048');
-    if(!b) return;
+    const b=document.getElementById('board2048'); if(!b) return;
     b.innerHTML='';
-    // Background cells
     for(let r=0;r<SIZE;r++) for(let c=0;c<SIZE;c++){
       const bg=document.createElement('div');
       bg.className='g2048-bg-cell';
@@ -73,8 +69,38 @@ const Game2048 = (() => {
     }
   }
 
-  function cellX(c){ return GAP + c*(TILE+GAP); }
-  function cellY(r){ return GAP + r*(TILE+GAP); }
+  function cellX(c){ return GAP+c*(TILE+GAP); }
+  function cellY(r){ return GAP+r*(TILE+GAP); }
+
+  // Save state for undo
+  function saveHistory(){
+    const snapshot={
+      score,
+      grid: grid.map(row=>row.map(t=>t?{val:t.val,id:t.id,r:t.r,c:t.c}:null))
+    };
+    history.push(snapshot);
+    if(history.length>10) history.shift();
+  }
+
+  function undo(){
+    if(history.length<1){Notify.warn('Nothing to undo!');return;}
+    const prev=history.pop();
+    score=prev.score;
+    // Rebuild grid from snapshot
+    Object.values(tileEls).forEach(el=>el.remove());
+    tileEls={};
+    grid=prev.grid.map(row=>row.map(t=>{
+      if(!t) return null;
+      const tile={val:t.val,id:t.id,r:t.r,c:t.c};
+      createTileEl(tile.id,tile.val,tile.r,tile.c,false);
+      // restore nextId if needed
+      if(tile.id>=nextId) nextId=tile.id+1;
+      return tile;
+    }));
+    won=false; removeOverlays();
+    updateHUD();
+    Notify.info('Undo!');
+  }
 
   function spawn(){
     const empty=[];
@@ -105,29 +131,27 @@ const Game2048 = (() => {
   function applyTileStyle(el,val,r,c){
     const log2=Math.log2(val);
     const st=TILE_STYLES[val]||TILE_STYLES[2048];
-    if(coverSrc && log2>=4){
+    if(coverSrc&&log2>=4){
       const pct=Math.min((log2-3)/8,1);
-      const rPct=r/Math.max(SIZE-1,1)*100;
-      const cPct=c/Math.max(SIZE-1,1)*100;
       el.style.backgroundImage=`url(${coverSrc})`;
       el.style.backgroundSize=`${SIZE*100}% ${SIZE*100}%`;
-      el.style.backgroundPosition=`${cPct}% ${rPct}%`;
+      el.style.backgroundPosition=`${c/Math.max(SIZE-1,1)*100}% ${r/Math.max(SIZE-1,1)*100}%`;
       el.style.opacity=0.35+pct*0.65;
-      el.style.borderColor=st.border;
       el.style.border=`2px solid ${st.border}`;
+      const lbl=el.querySelector('.g2048-label');
+      if(lbl) lbl.style.color=`rgba(255,255,255,${0.6+pct*0.4})`;
     } else {
       el.style.background=st.bg;
       el.style.border=`2px solid ${st.border}`;
       el.style.opacity='1';
+      const lbl=el.querySelector('.g2048-label');
+      if(lbl) lbl.style.color=st.fg;
     }
-    const lbl=el.querySelector('.g2048-label');
-    if(lbl) lbl.style.color=st.fg;
   }
 
   function moveTileEl(id,r,c){
     const el=tileEls[id]; if(!el) return;
-    el.style.left=cellX(c)+'px';
-    el.style.top=cellY(r)+'px';
+    el.style.left=cellX(c)+'px'; el.style.top=cellY(r)+'px';
   }
 
   function removeTileEl(id){
@@ -136,18 +160,20 @@ const Game2048 = (() => {
     setTimeout(()=>{el.remove();delete tileEls[id];},180);
   }
 
-  function updateTileEl(id,val,r,c){
+  function updateTileVal(id,val,r,c){
     const el=tileEls[id]; if(!el) return;
-    el.querySelector('.g2048-label').textContent=val>=1000?(val/1000)+'k':val;
+    const lbl=el.querySelector('.g2048-label');
+    if(lbl) lbl.textContent=val>=1000?(val/1000)+'k':val;
     applyTileStyle(el,val,r,c);
     el.classList.remove('g2048-merge-pop');
-    void el.offsetWidth; // reflow
+    void el.offsetWidth;
     el.classList.add('g2048-merge-pop');
   }
 
   function move(dir){
     if(moving) return;
-    const prev=JSON.stringify(grid.map(r=>r.map(t=>t?{v:t.val}:null)));
+    saveHistory();
+    const prev=JSON.stringify(grid.map(r=>r.map(t=>t?t.val:null)));
     let gained=0;
 
     const rows=[0,1,2,3], cols=[0,1,2,3];
@@ -155,68 +181,48 @@ const Game2048 = (() => {
       const cs=dir==='right'?[3,2,1,0]:cols;
       rows.forEach(r=>{
         const line=cs.map(c=>grid[r][c]).filter(Boolean);
-        const{merged,pts}=mergeArr(line);
-        gained+=pts;
+        const{merged,pts}=mergeArr(line); gained+=pts;
         cs.forEach((c,i)=>{
-          if(merged[i]){
-            grid[r][c]=merged[i];
-            grid[r][c].r=r; grid[r][c].c=c;
-            moveTileEl(merged[i].id,r,c);
-          } else {
-            grid[r][c]=null;
-          }
+          if(merged[i]){grid[r][c]=merged[i];grid[r][c].r=r;grid[r][c].c=c;moveTileEl(merged[i].id,r,c);}
+          else grid[r][c]=null;
         });
       });
     } else {
       const rs=dir==='down'?[3,2,1,0]:rows;
       cols.forEach(c=>{
         const line=rs.map(r=>grid[r][c]).filter(Boolean);
-        const{merged,pts}=mergeArr(line);
-        gained+=pts;
+        const{merged,pts}=mergeArr(line); gained+=pts;
         rs.forEach((r,i)=>{
-          if(merged[i]){
-            grid[r][c]=merged[i];
-            grid[r][c].r=r; grid[r][c].c=c;
-            moveTileEl(merged[i].id,r,c);
-          } else {
-            grid[r][c]=null;
-          }
+          if(merged[i]){grid[r][c]=merged[i];grid[r][c].r=r;grid[r][c].c=c;moveTileEl(merged[i].id,r,c);}
+          else grid[r][c]=null;
         });
       });
     }
 
-    const next2=JSON.stringify(grid.map(r=>r.map(t=>t?{v:t.val}:null)));
-    if(prev===next2) return; // nothing moved
+    const next=JSON.stringify(grid.map(r=>r.map(t=>t?t.val:null)));
+    if(prev===next){history.pop();return;} // nothing moved, discard history
 
     score+=gained;
     if(score>best){best=score;localStorage.setItem('vn_2048_best',best);}
-
     moving=true;
     setTimeout(()=>{
-      spawn();
-      updateHUD();
-      moving=false;
+      spawn(); updateHUD(); moving=false;
       if(!won) checkWin();
-      if(!hasMoves()) setTimeout(gameOver,300);
+      if(!hasMoves()) showGameOver();
     },160);
   }
 
   function mergeArr(tiles){
-    let pts=0;
-    const out=[];
-    let i=0;
+    let pts=0; const out=[]; let i=0;
     while(i<tiles.length){
-      if(i+1<tiles.length && tiles[i].val===tiles[i+1].val){
+      if(i+1<tiles.length&&tiles[i].val===tiles[i+1].val){
         const newVal=tiles[i].val*2; pts+=newVal;
-        // Keep first tile, update its value, remove second
         const kept=tiles[i];
         removeTileEl(tiles[i+1].id);
         kept.val=newVal;
-        updateTileEl(kept.id,newVal,kept.r,kept.c);
+        updateTileVal(kept.id,newVal,kept.r,kept.c);
         out.push(kept); i+=2;
-      } else {
-        out.push(tiles[i]); i++;
-      }
+      } else { out.push(tiles[i]); i++; }
     }
     while(out.length<SIZE) out.push(null);
     return{merged:out,pts};
@@ -228,14 +234,38 @@ const Game2048 = (() => {
     }
   }
 
+  function removeOverlays(){
+    document.querySelectorAll('.g2048-overlay').forEach(el=>el.remove());
+  }
+
   function showWin(){
     const w=document.getElementById('game2048Container'); if(!w) return;
+    removeOverlays();
     const ov=document.createElement('div'); ov.className='g2048-overlay';
     ov.innerHTML=`
       <div class="g2048-win-title">2048!</div>
-      <div class="g2048-win-sub">Cover revealed 🎵</div>
+      <div class="g2048-win-sub">Cover unlocked 🎵</div>
       ${coverSrc?`<img src="${coverSrc}" class="g2048-win-img"/>`:''}
-      <button class="btn-primary" onclick="this.closest('.g2048-overlay').remove()">Keep Playing</button>
+      <div style="display:flex;gap:.75rem;margin-top:.5rem">
+        <button class="btn-primary" onclick="this.closest('.g2048-overlay').remove()">Keep Playing</button>
+        <button class="btn-secondary" onclick="Game2048._restart()">New Game</button>
+      </div>
+    `;
+    w.style.position='relative'; w.appendChild(ov);
+  }
+
+  function showGameOver(){
+    const w=document.getElementById('game2048Container'); if(!w) return;
+    removeOverlays();
+    const ov=document.createElement('div'); ov.className='g2048-overlay';
+    ov.innerHTML=`
+      <div class="g2048-win-title" style="color:var(--accent2)">Game Over</div>
+      <div class="g2048-win-sub" style="font-size:1rem;margin:.5rem 0">Score: <b style="color:var(--accent)">${score}</b> &nbsp; Best: <b style="color:var(--accent)">${best}</b></div>
+      <div style="display:flex;gap:.75rem;margin-top:.5rem">
+        <button class="btn-primary" onclick="Game2048._restart()">Play Again</button>
+        <button class="btn-secondary" onclick="Game2048._undo()">↩ Undo</button>
+        <button class="btn-secondary" onclick="this.closest('.g2048-overlay').remove()">Close</button>
+      </div>
     `;
     w.style.position='relative'; w.appendChild(ov);
   }
@@ -249,19 +279,16 @@ const Game2048 = (() => {
     return false;
   }
 
-  function gameOver(){
-    setTimeout(()=>{if(confirm(`Game over!\nScore: ${score}\nPlay again?`))startGame();},100);
-  }
-
   function updateHUD(){
     const s=document.getElementById('score2048'),b=document.getElementById('best2048');
-    if(s)s.textContent=score;if(b)b.textContent=best;
+    if(s)s.textContent=score; if(b)b.textContent=best;
   }
 
   function handleKey(e){
     if(e.target.tagName==='INPUT'||e.target.tagName==='TEXTAREA') return;
     if(document.getElementById('game2048Container')?.classList.contains('hidden')) return;
     const map={ArrowLeft:'left',ArrowRight:'right',ArrowUp:'up',ArrowDown:'down'};
+    if(e.key==='z'||e.key==='Z'){undo();return;}
     if(map[e.key]){e.preventDefault();move(map[e.key]);}
   }
 
@@ -270,5 +297,9 @@ const Game2048 = (() => {
     if(navigator.share){try{await navigator.share({title:'VNportal 2048',text,url:'https://github.com/huangd-816/VNportal'});return;}catch{}}
     try{await navigator.clipboard.writeText(text);Notify.success('Score + link copied!');}catch{alert(text);}
   }
-  return{init};
+
+  // Expose for overlay buttons
+  const api={init,_restart:()=>startGame(),_undo:undo};
+  window.Game2048=api;
+  return api;
 })();
