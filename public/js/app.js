@@ -27,6 +27,7 @@ const App = (() => {
     Puzzle.init();
     TrackMatch.init();
     Workshop.init();
+    if(typeof Auth!=='undefined') Auth.init();
     if(typeof DJMix!=='undefined')   DJMix.init();
     if(typeof Player!=='undefined')  Player.initUI();
     if(typeof Spotify!=='undefined') Spotify.init();

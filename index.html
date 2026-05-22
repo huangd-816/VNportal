@@ -35,6 +35,13 @@
       <li><a href="#" class="nav-item" data-page="popular"><span class="nav-icon">◆</span> Workshop</a></li>
     </ul>
 
+    <!-- AUTH BUTTON -->
+    <div class="sidebar-auth">
+      <div class="auth-avatar" id="authAvatar" style="display:none"></div>
+      <button class="auth-sidebar-btn" id="authBtn">Sign In</button>
+      <span class="auth-name" id="authName"></span>
+    </div>
+
     <!-- SPOTIFY CONNECT -->
     <div class="sidebar-spotify" id="spotifyConnect">
       <button class="spotify-btn" id="spotifyBtn">
@@ -481,16 +488,21 @@
 
       <!-- DISCUSSION CHATBOX -->
       <div class="ws-chat-section" style="position:relative;z-index:1;margin-top:2rem">
-        <div class="ws-section-title" style="font-family:var(--font-d);font-size:1.3rem;letter-spacing:.08em;color:var(--accent);margin-bottom:1rem">💬 Discussion</div>
-        <div class="ws-chat-wrap">
-          <div class="ws-chat-messages" id="chatMessages"></div>
-          <div class="ws-chat-input-row">
-            <input type="text" id="chatName" placeholder="Your name" class="ws-chat-name" maxlength="20" />
-            <input type="text" id="chatMsg" placeholder="Say something about your vinyl..." class="ws-chat-msg" maxlength="200" />
-            <button class="btn-primary" id="chatSend" style="flex-shrink:0">Send</button>
-          </div>
-          <p style="font-size:.6rem;color:var(--text-dim);margin-top:.4rem;letter-spacing:.05em">Messages are saved locally on your device · Phase 6 will sync with others</p>
+        <div class="ws-chat-header">
+          <div class="ws-section-title" style="margin:0">💬 Discussion</div>
+          <button class="chat-ctrl-btn" id="chatMinimize" title="Minimize">—</button>
         </div>
+        <div class="ws-chat-wrap" id="chatWrap">
+          <div id="chatBody">
+            <div class="ws-chat-messages" id="chatMessages"></div>
+            <div class="ws-chat-input-row">
+              <input type="text" id="chatName" placeholder="Your name" class="ws-chat-name" maxlength="20" />
+              <input type="text" id="chatMsg" placeholder="Say something about your vinyl..." class="ws-chat-msg" maxlength="200" />
+              <button class="btn-primary" id="chatSend" style="flex-shrink:0">Send</button>
+            </div>
+          </div>
+        </div>
+        <p style="font-size:.6rem;color:var(--text-dim);margin-top:.4rem;letter-spacing:.05em">Messages saved locally · Phase 6 will sync globally</p>
       </div>
     </section>
 
@@ -549,6 +561,7 @@
     <span class="player-source-badge" id="playerSourceBadge">—</span>
   </div>
 
+  <script src="public/js/auth.js"></script>
   <script src="public/js/notify.js"></script>
   <script src="public/js/store.js"></script>
   <script src="public/js/db.js"></script>

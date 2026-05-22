@@ -4,9 +4,9 @@ const Snake = (() => {
   let coverImg=null;
   // Plain single-hue palette — body and apple share the same color family
   // Head = bright accent, body fades from same hue, apple = same accent
-  const HEAD_COLOR  = '#f5c518';  // yellow
-  const BODY_COLORS = ['#e8b800','#d4a500','#c09200','#ac8000','#987000','#846000','#705200','#5c4400'];
-  const APPLE_COLOR = '#f5c518';
+  const HEAD_COLOR  = '#22cc55';  // yellow
+  const BODY_COLORS = ['#1db848','#18a03e','#148834','#10702a','#0c5820','#084016','#04280c','#021404'];
+  const APPLE_COLOR = '#22cc55';
 
   function init() {
     canvas=document.getElementById('snakeCanvas'); if(!canvas) return;
