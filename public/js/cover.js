@@ -106,23 +106,17 @@ const Cover = (() => {
       btn.addEventListener('click',()=>applyPreset(btn.dataset.preset));
     });
 
-    // Image upload (supports GIF)
-    const imgUp=document.getElementById('coverImgUpload');
-    if(imgUp){
-      imgUp.addEventListener('change',e=>{
-        const file=e.target.files[0]; if(!file) return;
-        const url=URL.createObjectURL(file);
-        const img=new Image();
-        img.onload=()=>{
+    // Image import via ImgImport module
+    document.getElementById('coverImportBtn')?.addEventListener('click',()=>{
+      if(typeof ImgImport!=='undefined'){
+        ImgImport.open(importedCanvas=>{
           pushUndo();
           bgCtx.save(); bgCtx.beginPath(); bgCtx.arc(R,R,R,0,Math.PI*2); bgCtx.clip();
-          bgCtx.drawImage(img,0,0,W,H); bgCtx.restore(); drawHole(bgCtx);
-          composite(); URL.revokeObjectURL(url);
-          Notify.success('Image imported to canvas');
-        };
-        img.src=url;
-      });
-    }
+          bgCtx.drawImage(importedCanvas,0,0,W,H); bgCtx.restore(); drawHole(bgCtx);
+          composite(); Notify.success('Image imported!');
+        });
+      }
+    });
 
     // Vinyl select
     const sel=document.getElementById('coverVinylSelect');

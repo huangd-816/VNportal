@@ -164,7 +164,7 @@
         </div>
       </div>
       <div class="cover-studio">
-        <div class="cover-tools">
+        <div class="cover-tools cover-tools-left">
           <div class="tool-section-label">Tools</div>
           <div class="tool-btns">
             <button class="tool-btn active" data-tool="brush">✏️ Brush</button>
@@ -173,18 +173,9 @@
             <button class="tool-btn" data-tool="eyedropper">💉 Pick</button>
           </div>
           <div class="tool-section-label" style="margin-top:1rem">Brush</div>
-          <div class="tool-group">
-            <label>Size</label>
-            <input type="range" id="brushSize" min="1" max="60" value="10" />
-          </div>
-          <div class="tool-group">
-            <label>Opacity</label>
-            <input type="range" id="brushOpacity" min="0.05" max="1" step="0.05" value="1" />
-          </div>
-          <div class="tool-group">
-            <label>Color</label>
-            <input type="color" id="brushColor" value="#f5c518" />
-          </div>
+          <div class="tool-group"><label>Size</label><input type="range" id="brushSize" min="1" max="60" value="10"/></div>
+          <div class="tool-group"><label>Opacity</label><input type="range" id="brushOpacity" min="0.05" max="1" step="0.05" value="1"/></div>
+          <div class="tool-group"><label>Color</label><input type="color" id="brushColor" value="#f5c518"/></div>
           <div class="color-swatches" id="colorSwatches">
             <div class="swatch" style="background:#f5c518" data-color="#f5c518"></div>
             <div class="swatch" style="background:#e8734a" data-color="#e8734a"></div>
@@ -198,57 +189,40 @@
           <div class="tool-section-label" style="margin-top:1rem">Text</div>
           <div class="tool-group">
             <input type="text" id="coverText" placeholder="Type text..." class="cover-text-input"/>
-            <input type="range" id="textSize" min="12" max="80" value="28" />
-            <button class="tool-btn" id="addTextBtn" style="width:100%;margin-top:0.4rem">Place Text</button>
-          </div>
-          <div class="tool-section-label" style="margin-top:1rem">Image</div>
-          <div class="tool-group">
-            <input type="file" id="coverImgUpload" accept="image/*,image/gif" />
-          </div>
-          <div class="tool-section-label" style="margin-top:1rem">Filters</div>
-          <div class="tool-group">
-            <label>Brightness</label>
-            <input type="range" id="filterBrightness" min="0.2" max="2" step="0.05" value="1" />
-          </div>
-          <div class="tool-group">
-            <label>Contrast</label>
-            <input type="range" id="filterContrast" min="0.2" max="2" step="0.05" value="1" />
-          </div>
-          <div class="tool-group">
-            <label>Saturation</label>
-            <input type="range" id="filterSaturation" min="0" max="3" step="0.1" value="1" />
-          </div>
-          <div class="tool-group">
-            <label>Blur</label>
-            <input type="range" id="filterBlur" min="0" max="8" step="0.5" value="0" />
-          </div>
-          <div class="tool-group">
-            <label>Sepia</label>
-            <input type="range" id="filterSepia" min="0" max="1" step="0.05" value="0" />
-          </div>
-          <div class="tool-group">
-            <label>Grayscale</label>
-            <input type="range" id="filterGrayscale" min="0" max="1" step="0.05" value="0" />
-          </div>
-          <div class="tool-section-label" style="margin-top:.75rem">Presets</div>
-          <div style="display:flex;flex-wrap:wrap;gap:.3rem;margin-bottom:.75rem">
-            <button class="filter-preset tool-btn" data-preset="vintage" style="flex:1;min-width:60px;text-align:center;font-size:.6rem">Vintage</button>
-            <button class="filter-preset tool-btn" data-preset="bw"      style="flex:1;min-width:60px;text-align:center;font-size:.6rem">B&W</button>
-            <button class="filter-preset tool-btn" data-preset="neon"    style="flex:1;min-width:60px;text-align:center;font-size:.6rem">Neon</button>
-            <button class="filter-preset tool-btn" data-preset="dreamy"  style="flex:1;min-width:60px;text-align:center;font-size:.6rem">Dreamy</button>
-            <button class="filter-preset tool-btn" data-preset="reset"   style="flex:1;min-width:60px;text-align:center;font-size:.6rem">Reset</button>
-          </div>
-          <div class="cover-actions">
-            <button class="btn-secondary" id="clearCanvas">Clear</button>
-            <button class="btn-secondary" id="undoCover">↩ Undo</button>
-            <button class="btn-primary" id="saveCover">Save to Vinyl</button>
-            <button class="btn-secondary" id="exportCover">Export PNG</button>
-            <a class="btn-secondary" href="https://www.canva.com/design/create" target="_blank" style="text-decoration:none;display:block;text-align:center;font-size:0.7rem;padding:0.5rem">New Canva Design ↗</a>
-            <a class="btn-secondary" href="https://www.figma.com/design" target="_blank" style="text-decoration:none;display:block;text-align:center;font-size:0.7rem;padding:0.5rem">New Figma File ↗</a>
+            <input type="range" id="textSize" min="12" max="80" value="28"/>
+            <button class="tool-btn" id="addTextBtn" style="width:100%;margin-top:.4rem">Place Text</button>
           </div>
         </div>
         <div class="cover-canvas-wrap">
           <canvas id="coverCanvas" width="500" height="500"></canvas>
+        </div>
+        <div class="cover-tools cover-tools-right">
+          <div class="tool-section-label">Import</div>
+          <button class="btn-primary" id="coverImportBtn" style="width:100%;margin-bottom:1rem;font-size:.72rem">📥 Image / GIF / Video / Meme</button>
+          <div class="tool-section-label">Filters</div>
+          <div class="tool-group"><label>Brightness</label><input type="range" id="filterBrightness" min="0.2" max="2" step="0.05" value="1"/></div>
+          <div class="tool-group"><label>Contrast</label><input type="range" id="filterContrast" min="0.2" max="2" step="0.05" value="1"/></div>
+          <div class="tool-group"><label>Saturation</label><input type="range" id="filterSaturation" min="0" max="3" step="0.1" value="1"/></div>
+          <div class="tool-group"><label>Blur</label><input type="range" id="filterBlur" min="0" max="8" step="0.5" value="0"/></div>
+          <div class="tool-group"><label>Sepia</label><input type="range" id="filterSepia" min="0" max="1" step="0.05" value="0"/></div>
+          <div class="tool-group"><label>Grayscale</label><input type="range" id="filterGrayscale" min="0" max="1" step="0.05" value="0"/></div>
+          <div class="tool-section-label" style="margin-top:.75rem">Presets</div>
+          <div style="display:flex;flex-wrap:wrap;gap:.3rem;margin-bottom:.75rem">
+            <button class="filter-preset tool-btn" data-preset="vintage" style="flex:1;min-width:50px;font-size:.6rem">Vintage</button>
+            <button class="filter-preset tool-btn" data-preset="bw"      style="flex:1;min-width:50px;font-size:.6rem">B&amp;W</button>
+            <button class="filter-preset tool-btn" data-preset="neon"    style="flex:1;min-width:50px;font-size:.6rem">Neon</button>
+            <button class="filter-preset tool-btn" data-preset="dreamy"  style="flex:1;min-width:50px;font-size:.6rem">Dreamy</button>
+            <button class="filter-preset tool-btn" data-preset="reset"   style="flex:1;min-width:50px;font-size:.6rem">Reset</button>
+          </div>
+          <div class="tool-section-label">Actions</div>
+          <div class="cover-actions">
+            <button class="btn-secondary" id="undoCover" style="width:100%">↩ Undo</button>
+            <button class="btn-secondary" id="clearCanvas" style="width:100%">Clear</button>
+            <button class="btn-primary" id="saveCover" style="width:100%">Save to Vinyl</button>
+            <button class="btn-secondary" id="exportCover" style="width:100%">Export PNG</button>
+            <a class="btn-secondary" href="https://www.canva.com/design/create" target="_blank" style="text-decoration:none;display:block;text-align:center;font-size:.7rem;padding:.5rem">New Canva ↗</a>
+            <a class="btn-secondary" href="https://www.figma.com/design" target="_blank" style="text-decoration:none;display:block;text-align:center;font-size:.7rem;padding:.5rem">New Figma ↗</a>
+          </div>
         </div>
       </div>
     </section>
@@ -490,7 +464,11 @@
       <div class="ws-chat-section" style="position:relative;z-index:1;margin-top:2rem">
         <div class="ws-chat-header">
           <div class="ws-section-title" style="margin:0">💬 Discussion</div>
-          <button class="chat-ctrl-btn" id="chatMinimize" title="Minimize">—</button>
+          <div class="chat-traffic-lights">
+            <button class="traffic-light tl-red"    id="chatClose"    title="Clear chat" onclick="if(confirm('Clear all messages?')){localStorage.removeItem('vn_chat');Workshop.onShow();}"></button>
+            <button class="traffic-light tl-yellow" id="chatMinimize" title="Minimize"></button>
+            <button class="traffic-light tl-green"  id="chatExpand"   title="Expand" style="display:none"></button>
+          </div>
         </div>
         <div class="ws-chat-wrap" id="chatWrap">
           <div id="chatBody">
@@ -562,6 +540,7 @@
   </div>
 
   <script src="public/js/auth.js"></script>
+  <script src="public/js/img-import.js"></script>
   <script src="public/js/notify.js"></script>
   <script src="public/js/store.js"></script>
   <script src="public/js/db.js"></script>

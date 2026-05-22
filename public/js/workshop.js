@@ -12,19 +12,43 @@ const Workshop = (() => {
   function saveMessages(m){localStorage.setItem(CHAT_KEY,JSON.stringify(m));}
 
   function initChat(){
+    // Auto-generate guest name if not logged in
+    const user=typeof Auth!=='undefined'&&Auth.isLoggedIn()?Auth.getUser():null;
+    const nameInput=document.getElementById('chatName');
+    if(nameInput){
+      if(user){
+        nameInput.style.display='none'; // hide if logged in
+      } else {
+        // Generate/restore guest name
+        let guestName=localStorage.getItem(NAME_KEY);
+        if(!guestName||!guestName.startsWith('Guest')){
+          const num=String(Math.floor(Math.random()*900)+100);
+          guestName='Guest'+num;
+          localStorage.setItem(NAME_KEY,guestName);
+        }
+        nameInput.value=guestName;
+        nameInput.style.display='';
+      }
+    }
+
     document.getElementById('chatSend')?.addEventListener('click', sendMessage);
     document.getElementById('chatMsg')?.addEventListener('keydown', e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendMessage();}});
-    // Minimize
-    document.getElementById('chatMinimize')?.addEventListener('click', ()=>{
-      const body=document.getElementById('chatBody');
-      const btn=document.getElementById('chatMinimize');
-      const isMin=body.style.display==='none';
-      body.style.display=isMin?'':'none';
-      btn.textContent=isMin?'—':'□';
+
+    // Traffic light minimize (yellow = minimize, green = restore)
+    const chatBody=document.getElementById('chatBody');
+    const tlYellow=document.getElementById('chatMinimize');
+    const tlGreen=document.getElementById('chatExpand');
+    tlYellow?.addEventListener('click',()=>{
+      if(chatBody){chatBody.style.display='none';}
+      tlYellow.style.display='none';
+      if(tlGreen)tlGreen.style.display='';
     });
-    // Make resizable via CSS resize
-    const wrap=document.getElementById('chatWrap');
-    if(wrap) wrap.style.resize='both';
+    tlGreen?.addEventListener('click',()=>{
+      if(chatBody){chatBody.style.display='';}
+      tlYellow.style.display='';
+      tlGreen.style.display='none';
+    });
+
     renderChat();
   }
 
@@ -32,8 +56,16 @@ const Workshop = (() => {
     const msgInput=document.getElementById('chatMsg');
     const text=msgInput?.value?.trim(); if(!text) return;
     const user=typeof Auth!=='undefined'&&Auth.isLoggedIn()?Auth.getUser():null;
-    const name=user?.name||(document.getElementById('chatName')?.value?.trim()||'Anonymous');
-    if(!user) localStorage.setItem(NAME_KEY,name);
+    let name;
+    if(user){
+      name=user.name;
+    } else {
+      name=localStorage.getItem(NAME_KEY);
+      if(!name||!name.startsWith('Guest')){
+        name='Guest'+String(Math.floor(Math.random()*900)+100);
+        localStorage.setItem(NAME_KEY,name);
+      }
+    }
 
     const msgs=getMessages();
     msgs.push({
