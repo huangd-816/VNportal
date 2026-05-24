@@ -1635,3 +1635,51 @@ body:has(.player-bar.visible) .main-content{padding-bottom:calc(var(--player-h) 
   display: flex; gap: .75rem; justify-content: flex-end;
   padding-top: 1rem; border-top: 1px solid var(--border);
 }
+
+/* ==========================================
+   DJ MIX — SPOTIFY DIRECT OPEN BUTTONS
+   ========================================== */
+.dj-spotify-actions {
+  background: rgba(29,185,84,.06);
+  border: 1px solid rgba(29,185,84,.25);
+  border-radius: 4px;
+  padding: .85rem;
+  margin: .5rem 0;
+}
+.dj-spotify-hint {
+  font-size: .65rem; color: #1DB954;
+  letter-spacing: .1em; text-transform: uppercase;
+  margin-bottom: .6rem;
+}
+.dj-spotify-open-btn {
+  flex: 1; background: #1DB954; color: #000;
+  border: none; padding: .6rem .75rem;
+  font-family: var(--font-m); font-size: .75rem;
+  font-weight: bold; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  gap: .4rem; text-decoration: none;
+  transition: background .18s;
+}
+.dj-spotify-open-btn:hover { background: #1ed760; }
+.dj-spotify-web-btn {
+  background: transparent; border: 1px solid rgba(29,185,84,.4);
+  color: #1DB954; padding: .6rem .75rem;
+  font-family: var(--font-m); font-size: .72rem;
+  text-decoration: none; display: flex; align-items: center;
+  transition: all .18s; white-space: nowrap;
+}
+.dj-spotify-web-btn:hover { background: rgba(29,185,84,.1); }
+.dj-spotify-save-row {
+  display: flex; align-items: center; gap: .4rem;
+  margin-top: .65rem; padding-top: .65rem;
+  border-top: 1px solid rgba(29,185,84,.15);
+  flex-wrap: wrap;
+}
+.dj-spotify-save-input {
+  flex: 1; min-width: 120px;
+  background: var(--surface2); border: 1px solid var(--border);
+  color: var(--text-dim); padding: .4rem .6rem;
+  font-family: var(--font-m); font-size: .68rem; outline: none;
+}
+.dj-spotify-save-input::placeholder { color: var(--text-dim); opacity: .5; }
+.dj-spotify-save-input:focus { border-color: #1DB954; color: var(--text); }
