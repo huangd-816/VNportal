@@ -248,6 +248,7 @@
             <div class="deck-artist" id="deckAArtistDisp">—</div>
           </div>
           <select class="deck-select" id="deckASelect"><option value="">— Load track —</option></select>
+          <div id="deckASpotifyEmbed" style="display:none;margin:.5rem 0"></div>
           <div class="deck-controls">
             <button class="deck-btn" id="deckAPrev">⏮</button>
             <button class="deck-btn play" id="deckAPlay">▶</button>
@@ -299,6 +300,7 @@
             <div class="deck-artist" id="deckBArtistDisp">—</div>
           </div>
           <select class="deck-select" id="deckBSelect"><option value="">— Load track —</option></select>
+          <div id="deckBSpotifyEmbed" style="display:none;margin:.5rem 0"></div>
           <div class="deck-controls">
             <button class="deck-btn" id="deckBPrev">⏮</button>
             <button class="deck-btn play" id="deckBPlay">▶</button>
@@ -541,6 +543,9 @@
     <span class="player-source-badge" id="playerSourceBadge">—</span>
   </div>
 
+  <!-- DANMAKU BULLET SCREEN LAYER -->
+  <div id="danmakuLayer" class="danmaku-layer"></div>
+
   <script src="public/js/auth.js"></script>
   <script src="public/js/img-import.js"></script>
   <script src="public/js/notify.js"></script>
@@ -558,6 +563,7 @@
   <script src="public/js/workshop.js"></script>
   <script src="public/js/spotify.js"></script>
   <script src="public/js/dj-mix.js"></script>
+  <script src="public/js/chat-float.js"></script>
   <script src="public/js/app.js"></script>
 </body>
 </html>

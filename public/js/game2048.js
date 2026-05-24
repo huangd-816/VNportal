@@ -264,7 +264,7 @@ const Game2048 = (() => {
       <div style="display:flex;gap:.75rem;margin-top:.5rem">
         <button class="btn-primary" onclick="Game2048._restart()">Play Again</button>
         <button class="btn-secondary" onclick="Game2048._undo()">↩ Undo</button>
-        <button class="btn-secondary" onclick="this.closest('.g2048-overlay').remove()">Close</button>
+        <button class="btn-secondary" onclick="Game2048._restart()">New Game</button>
       </div>
     `;
     w.style.position='relative'; w.appendChild(ov);

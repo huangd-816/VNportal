@@ -4,9 +4,9 @@ const Snake = (() => {
   let coverImg=null;
   // Plain single-hue palette — body and apple share the same color family
   // Head = bright accent, body fades from same hue, apple = same accent
-  const HEAD_COLOR  = '#22cc55';  // yellow
-  const BODY_COLORS = ['#1db848','#18a03e','#148834','#10702a','#0c5820','#084016','#04280c','#021404'];
-  const APPLE_COLOR = '#22cc55';
+  const HEAD_COLOR  = '#f5c518';
+  const BODY_COLORS = ['#e8b800','#d4a500','#c09200','#ac8000','#987000','#846000','#705200','#5c4400'];
+  const APPLE_COLOR = '#e8192c';
 
   function init() {
     canvas=document.getElementById('snakeCanvas'); if(!canvas) return;
@@ -123,7 +123,7 @@ const Snake = (() => {
     ctx.beginPath(); ctx.arc(cx,cy,r,0,Math.PI*2);
     const grad=ctx.createRadialGradient(cx-3,cy-3,2,cx,cy,r);
     grad.addColorStop(0,'rgba(255,255,220,0.9)');
-    grad.addColorStop(0.4,APPLE_COLOR);
+    grad.addColorStop(0.3,APPLE_COLOR);
     grad.addColorStop(1,'rgba(120,90,0,0.8)');
     ctx.fillStyle=grad; ctx.fill();
     ctx.shadowBlur=0;
