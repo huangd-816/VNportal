@@ -1995,3 +1995,54 @@ body:has(.player-bar.visible) .main-content{padding-bottom:calc(var(--player-h) 
   font-size: .6rem; color: var(--text-dim); margin-top: .6rem; letter-spacing: .04em;
 }
 .dj-server-tip code { color: var(--accent); background: var(--surface2); padding: .1rem .3rem; border-radius: 2px; }
+
+/* ==========================================
+   DJ — DROP ZONE + LOADED TRACK
+   ========================================== */
+.deck-drag-over { border-color: var(--accent) !important; background: rgba(245,197,24,.05) !important; }
+
+.dj-drop-zone {
+  border: 2px dashed var(--border); border-radius: 6px;
+  padding: 1.25rem 1rem; text-align: center;
+  margin: .4rem 0; cursor: pointer;
+  transition: all .2s;
+}
+.dj-drop-zone:hover { border-color: var(--accent); background: rgba(245,197,24,.03); }
+.dj-drop-icon  { font-size: 1.6rem; margin-bottom: .35rem; }
+.dj-drop-text  { font-size: .78rem; color: var(--text); margin-bottom: .2rem; }
+.dj-drop-sub   { font-size: .62rem; color: var(--text-dim); margin-bottom: .6rem; }
+.dj-drop-browse {
+  display: inline-block; cursor: pointer;
+  background: var(--accent); color: #000;
+  padding: .35rem .9rem; font-family: var(--font-m);
+  font-size: .7rem; font-weight: bold;
+  transition: background .15s; border-radius: 2px;
+}
+.dj-drop-browse:hover { background: #ffd84d; }
+.dj-drop-divider {
+  font-size: .6rem; color: var(--text-dim);
+  margin-top: .65rem; letter-spacing: .08em;
+}
+
+.dj-loaded-track { padding: .5rem .25rem; }
+.dj-loaded-name  {
+  font-size: .75rem; color: var(--text);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  margin-bottom: .5rem;
+}
+.dj-loaded-progress { display: flex; align-items: center; gap: .5rem; margin-bottom: .5rem; }
+.dj-progress-bar {
+  flex: 1; height: 4px; background: var(--border);
+  border-radius: 2px; cursor: pointer; position: relative;
+}
+.dj-progress-fill {
+  height: 100%; background: var(--accent); border-radius: 2px;
+  width: 0%; transition: width .3s linear; pointer-events: none;
+}
+.dj-time { font-size: .6rem; color: var(--text-dim); flex-shrink: 0; min-width: 60px; }
+.dj-change-btn {
+  display: inline-block; cursor: pointer; font-family: var(--font-m);
+  font-size: .65rem; color: var(--text-dim); border: 1px solid var(--border);
+  padding: .25rem .6rem; transition: all .15s;
+}
+.dj-change-btn:hover { border-color: var(--accent); color: var(--accent); }
