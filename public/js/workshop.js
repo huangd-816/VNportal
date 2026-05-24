@@ -181,11 +181,134 @@ const Workshop = (() => {
     try{await navigator.clipboard.writeText(text);Notify.success('Cover link copied!');}catch{alert(text);}
   }
 
-  function onShow(){ renderPopular(); renderScores(); renderCoverGallery(); renderChat(); }
-  function init(){ initChat(); }
+  function onShow(){ renderPopular(); renderScores(); renderCoverGallery(); WsChat.render(); }
+  function init(){ WsChat.init(); }
   function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
 
   const api={init,onShow,trackPlay,addScore,_shareCover:shareCover};
   window.Workshop=api;
   return api;
+})();
+
+// ── Workshop floating chat controller ─────
+const WsChat = (() => {
+  let minimized=false;
+
+  function toggle(){
+    minimized=true;
+    document.getElementById('wsChatBody').style.display='none';
+    document.getElementById('wsChatMinBtn').style.display='none';
+    document.getElementById('wsChatMaxBtn').style.display='';
+  }
+  function restore(){
+    minimized=false;
+    document.getElementById('wsChatBody').style.display='';
+    document.getElementById('wsChatMinBtn').style.display='';
+    document.getElementById('wsChatMaxBtn').style.display='none';
+  }
+
+  function init(){
+    // Wire send
+    document.getElementById('wsChatSend')?.addEventListener('click', send);
+    document.getElementById('wsChatInput')?.addEventListener('keydown', e=>{
+      if(e.key==='Enter'){ e.preventDefault(); send(); }
+    });
+    // Draggable
+    const widget=document.getElementById('wsChatFloat');
+    const bar=document.getElementById('wsChatBar');
+    if(widget&&bar) makeDraggable(widget,bar);
+  }
+
+  function send(){
+    const input=document.getElementById('wsChatInput');
+    const text=input?.value?.trim(); if(!text) return;
+    const user=typeof Auth!=='undefined'&&Auth.isLoggedIn()?Auth.getUser():null;
+    let name=user?.name;
+    if(!name){
+      name=localStorage.getItem('vn_chat_name');
+      if(!name||!name.startsWith('Guest')){
+        name='Guest'+String(Math.floor(Math.random()*900)+100);
+        localStorage.setItem('vn_chat_name',name);
+      }
+    }
+    const msgs=JSON.parse(localStorage.getItem('vn_chat')||'[]');
+    msgs.push({id:Date.now().toString(),name,text,time:new Date().toISOString(),
+      userId:user?.id||'anon',vinyl:Store.getCurrentVinyl()?.name||null});
+    if(msgs.length>200)msgs.splice(0,msgs.length-200);
+    localStorage.setItem('vn_chat',JSON.stringify(msgs));
+    input.value='';
+    renderWsChat();
+    fireDanmaku({name,text});
+  }
+
+  function renderWsChat(){
+    const el=document.getElementById('wsChatMsgs'); if(!el) return;
+    const msgs=JSON.parse(localStorage.getItem('vn_chat')||'[]');
+    const user=typeof Auth!=='undefined'&&Auth.isLoggedIn()?Auth.getUser():null;
+    const myName=user?.name||localStorage.getItem('vn_chat_name')||'';
+    const myId=user?.id;
+    if(!msgs.length){el.innerHTML='<p class="chat-empty-hint">No messages yet</p>';return;}
+    el.innerHTML=msgs.slice(-40).map(m=>{
+      const isOwn=m.userId===myId||(!myId&&m.name===myName);
+      const time=new Date(m.time).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
+      return `<div class="cfm-row${isOwn?' cfm-own':''}">
+        ${!isOwn?`<span class="cfm-name">${esc(m.name)}</span>`:''}
+        <span class="cfm-bubble">${esc(m.text)}</span>
+        <span class="cfm-time">${time}</span>
+        ${isOwn?`<button class="cfm-del" data-id="${m.id}">✕</button>`:''}
+      </div>`;
+    }).join('');
+    el.querySelectorAll('.cfm-del').forEach(btn=>{
+      btn.addEventListener('click',()=>{
+        const ms=JSON.parse(localStorage.getItem('vn_chat')||'[]').filter(m=>m.id!==btn.dataset.id);
+        localStorage.setItem('vn_chat',JSON.stringify(ms)); renderWsChat();
+      });
+    });
+    el.scrollTop=el.scrollHeight;
+  }
+
+  function fireDanmaku(msg){
+    const layer=document.getElementById('danmakuLayer'); if(!layer) return;
+    const bullet=document.createElement('div');
+    bullet.className='danmaku-bullet';
+    const colors=['#f5c518','#e8734a','#4a9edd','#27ae60','#cc44ff','#ff4488','#00ccaa'];
+    const color=colors[Math.floor(Math.random()*colors.length)];
+    bullet.style.color=color;
+    bullet.style.textShadow=`0 0 8px ${color}44`;
+    const lanes=[12,44,76,108];
+    bullet.style.top=lanes[Math.floor(Math.random()*lanes.length)]+'px';
+    bullet.textContent=`${msg.name}: ${msg.text}`;
+    const W=window.innerWidth;
+    bullet.style.left=W+'px';
+    layer.appendChild(bullet);
+    const dur=5000+Math.random()*3000;
+    const start=performance.now();
+    function animate(now){
+      const pct=(now-start)/dur;
+      if(pct>=1){bullet.remove();return;}
+      bullet.style.left=(W-pct*(W+bullet.offsetWidth+200))+'px';
+      requestAnimationFrame(animate);
+    }
+    requestAnimationFrame(animate);
+  }
+
+  function makeDraggable(el,handle){
+    let ox=0,oy=0;
+    handle.style.cursor='grab';
+    handle.addEventListener('mousedown',e=>{
+      e.preventDefault();
+      const r=el.getBoundingClientRect();
+      ox=e.clientX-r.left; oy=e.clientY-r.top;
+      handle.style.cursor='grabbing';
+      function mv(e){el.style.left=(e.clientX-ox)+'px';el.style.top=(e.clientY-oy)+'px';el.style.right='auto';el.style.bottom='auto';}
+      function up(){handle.style.cursor='grab';document.removeEventListener('mousemove',mv);document.removeEventListener('mouseup',up);}
+      document.addEventListener('mousemove',mv);
+      document.addEventListener('mouseup',up);
+    });
+  }
+
+  function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+
+  window.WsChat={toggle,restore};
+  return{init,render:renderWsChat};
 })();

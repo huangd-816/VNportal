@@ -462,27 +462,23 @@
         </div>
       </div>
 
-      <!-- DISCUSSION CHATBOX -->
-      <div class="ws-chat-section" style="position:relative;z-index:1;margin-top:2rem">
-        <div class="ws-chat-header">
-          <div class="ws-section-title" style="margin:0">💬 Discussion</div>
-          <div class="chat-traffic-lights">
-            <button class="traffic-light tl-red"    id="chatClose"    title="Clear chat" onclick="if(confirm('Clear all messages?')){localStorage.removeItem('vn_chat');Workshop.onShow();}"></button>
-            <button class="traffic-light tl-yellow" id="chatMinimize" title="Minimize"></button>
-            <button class="traffic-light tl-green"  id="chatExpand"   title="Expand" style="display:none"></button>
+      <!-- DISCUSSION — Floating within workshop page -->
+      <div class="ws-chat-float" id="wsChatFloat">
+        <div class="ws-chat-float-bar" id="wsChatBar">
+          <span class="ws-chat-float-title">💬 Discussion</span>
+          <div class="chat-float-traffic">
+            <button class="tl-btn tl-red"    title="Clear all" onclick="if(confirm('Clear all messages?')){localStorage.removeItem('vn_chat');Workshop.onShow();}"></button>
+            <button class="tl-btn tl-yellow" title="Minimize"  id="wsChatMinBtn" onclick="WsChat.toggle()"></button>
+            <button class="tl-btn tl-green"  title="Restore"   id="wsChatMaxBtn" onclick="WsChat.restore()" style="display:none"></button>
           </div>
         </div>
-        <div class="ws-chat-wrap" id="chatWrap">
-          <div id="chatBody">
-            <div class="ws-chat-messages" id="chatMessages"></div>
-            <div class="ws-chat-input-row">
-              <input type="text" id="chatName" placeholder="Your name" class="ws-chat-name" maxlength="20" />
-              <input type="text" id="chatMsg" placeholder="Say something about your vinyl..." class="ws-chat-msg" maxlength="200" />
-              <button class="btn-primary" id="chatSend" style="flex-shrink:0">Send</button>
-            </div>
+        <div class="ws-chat-float-body" id="wsChatBody">
+          <div class="ws-chat-float-msgs" id="wsChatMsgs"></div>
+          <div class="ws-chat-float-input">
+            <input id="wsChatInput" placeholder="Type a message..." maxlength="200" class="ws-chat-float-textbox"/>
+            <button id="wsChatSend" class="ws-chat-float-sendbtn">→</button>
           </div>
         </div>
-        <p style="font-size:.6rem;color:var(--text-dim);margin-top:.4rem;letter-spacing:.05em">Messages saved locally · Phase 6 will sync globally</p>
       </div>
     </section>
 
@@ -546,6 +542,9 @@
   <!-- DANMAKU BULLET SCREEN LAYER -->
   <div id="danmakuLayer" class="danmaku-layer"></div>
 
+  <!-- DANMAKU BULLET SCREEN LAYER -->
+  <div id="danmakuLayer" class="danmaku-layer"></div>
+
   <script src="public/js/auth.js"></script>
   <script src="public/js/img-import.js"></script>
   <script src="public/js/notify.js"></script>
@@ -563,7 +562,7 @@
   <script src="public/js/workshop.js"></script>
   <script src="public/js/spotify.js"></script>
   <script src="public/js/dj-mix.js"></script>
-  <script src="public/js/chat-float.js"></script>
+
   <script src="public/js/app.js"></script>
 </body>
 </html>

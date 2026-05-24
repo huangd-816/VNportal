@@ -1,18 +1,16 @@
 // ============================================
 // VNportal — DJ Mix
-// Jamendo API — free in-browser streaming
-// No external apps, real Web Audio crossfader
-// Get a free client_id at devportal.jamendo.com
+// iTunes Search API — free, no key needed
+// 30-second previews of mainstream music
+// Plays directly in-browser via Web Audio
 // ============================================
 const DJMix = (() => {
-  // ⚠️ Replace with your free Jamendo client_id from devportal.jamendo.com
-  const JAMENDO_ID = '9b0a3bf0';
-  const JAMENDO    = 'https://api.jamendo.com/v3.0';
+  const ITUNES = 'https://itunes.apple.com/search';
 
-  let audioCtx = null, masterGain = null;
-  const decks = {
-    A: { audio:null, source:null, gainNode:null, playing:false, trackName:'', url:null },
-    B: { audio:null, source:null, gainNode:null, playing:false, trackName:'', url:null },
+  let audioCtx=null, masterGain=null;
+  const decks={
+    A:{audio:null,gainNode:null,playing:false,trackName:'',url:null},
+    B:{audio:null,gainNode:null,playing:false,trackName:'',url:null},
   };
   let crossfade=0.5, tapTimes=[], animFrame=null;
 
@@ -49,7 +47,7 @@ const DJMix = (() => {
       document.getElementById(`deck${id}Play`)?.addEventListener('click',()=>toggleDeck(id));
       document.getElementById(`deck${id}Cue`)?.addEventListener('click',()=>cueDeck(id));
       document.getElementById(`deck${id}Speed`)?.addEventListener('input',e=>{
-        if(decks[id].audio) decks[id].audio.playbackRate=+e.target.value;
+        if(decks[id].audio) decks[id].audio.playbackRate=Math.max(0.5,Math.min(2,+e.target.value));
       });
     });
     document.getElementById('crossfader')?.addEventListener('input',e=>{
@@ -60,13 +58,6 @@ const DJMix = (() => {
     });
     document.getElementById('tapBpmBtn')?.addEventListener('click',tapBpm);
     document.getElementById('djExportBtn')?.addEventListener('click',exportMix);
-    ['Hi','Mid','Lo'].forEach(band=>{
-      ['A','B'].forEach(id=>{
-        document.getElementById(`deck${id}${band}`)?.addEventListener('input',()=>{
-          Notify.info('EQ requires local files. Jamendo streams have fixed EQ.');
-        });
-      });
-    });
   }
 
   async function loadDeck(id, value){
@@ -88,152 +79,138 @@ const DJMix = (() => {
     const wrap=document.getElementById(`deck${id}SpotifyEmbed`);
     if(wrap) wrap.innerHTML='';
 
-    const loader=Notify.loading(`Searching for "${track.title}"...`);
-
     // 1. Try local file first
     if(typeof DB!=='undefined'){
       const key=DB.trackKey(vinylId,ti);
       const hasLocal=await DB.hasFile(key).catch(()=>false);
       if(hasLocal){
         const url=await DB.getFileURL(key);
-        Notify.dismiss(loader);
-        setAudioSource(id, url, 'local');
-        showDeckStatus(id, wrap, `📁 Local file loaded`, '#27ae60');
+        setAudio(id,url);
+        showStatus(wrap,'📁 Local file — full track','#27ae60');
+        Notify.success(`Deck ${id}: local file loaded`);
         return;
       }
     }
 
-    // 2. Search Jamendo
-    try{
-      const q=encodeURIComponent(track.title);
-      const artist=encodeURIComponent(track.artist||'');
-      // Try exact name first, then broader search
-      let url=`${JAMENDO}/tracks/?client_id=${JAMENDO_ID}&format=json&limit=5&namesearch=${q}&audioformat=mp32`;
-      let res=await fetch(url);
-      let data=await res.json();
-      let results=data.results||[];
-
-      // If no results, try searching just by name
-      if(!results.length){
-        url=`${JAMENDO}/tracks/?client_id=${JAMENDO_ID}&format=json&limit=5&search=${q}&audioformat=mp32`;
-        res=await fetch(url);
-        data=await res.json();
-        results=data.results||[];
-      }
-
+    // 2. iTunes Search API — free, no key, 30s previews
+    const loader=Notify.loading(`Finding "${track.title}"...`);
+    try {
+      const q=encodeURIComponent(`${track.title} ${track.artist||''}`);
+      const url=`${ITUNES}?term=${q}&media=music&entity=song&limit=8`;
+      // iTunes API requires a callback hack to avoid CORS on file://
+      // Use a proxy-free approach: load via JSON-P or direct fetch
+      const res=await fetch(url);
+      const data=await res.json();
       Notify.dismiss(loader);
 
-      if(results.length){
-        const t2=results[0];
-        const streamUrl=t2.audio; // direct mp3 stream
-        setAudioSource(id, streamUrl, 'jamendo');
-        showDeckResults(id, wrap, results, t2);
-        Notify.success(`Deck ${id}: Found "${t2.name}" by ${t2.artist_name} on Jamendo`);
-      } else {
-        Notify.dismiss(loader);
-        showNoResults(id, wrap, track);
+      const results=(data.results||[]).filter(r=>r.previewUrl);
+      if(!results.length){
+        showNoResults(wrap, track, q);
+        Notify.warn(`Deck ${id}: No preview found for "${track.title}"`);
+        return;
       }
+
+      // Best match: prioritize title match
+      const best=results.find(r=>
+        r.trackName?.toLowerCase().includes(track.title.toLowerCase())
+      ) || results[0];
+
+      setAudio(id, best.previewUrl);
+      showResults(id, wrap, results, best);
+      Notify.success(`Deck ${id}: "${best.trackName}" — 30s preview ♫`);
+
     } catch(e){
       Notify.dismiss(loader);
-      Notify.error(`Deck ${id}: Could not reach Jamendo — check connection`);
-      showNoResults(id, wrap, track);
+      // CORS issue on file:// — show manual URL fallback
+      showCorsNote(wrap, track);
     }
   }
 
-  function setAudioSource(id, url, source){
+  function setAudio(id, url){
     ensureCtx();
     const d=decks[id];
-    // Stop existing
     if(d.audio){ d.audio.pause(); d.audio=null; }
-    if(d.source){ try{d.source.disconnect();}catch{} d.source=null; }
 
     d.url=url;
     const audio=new Audio();
     audio.crossOrigin='anonymous';
     audio.src=url;
-    audio.preload='auto';
+    audio.preload='none';
     audio.addEventListener('ended',()=>stopDeck(id));
-    audio.addEventListener('error',e=>{
-      Notify.error(`Deck ${id}: Stream error — try another track`);
-      stopDeck(id);
-    });
     d.audio=audio;
-    d.source=source; // keep track of source type
 
-    // Connect to Web Audio for crossfading
+    // Connect to Web Audio for real crossfading
     try{
-      const mediaSource=audioCtx.createMediaElementSource(audio);
-      mediaSource.connect(d.gainNode);
-      d.source=mediaSource;
-    }catch(e){
-      // Already connected or CORS issue - fall back to direct audio
-      audio.volume=0.8;
-    }
+      const src=audioCtx.createMediaElementSource(audio);
+      src.connect(d.gainNode);
+    }catch{}
     applyCrossfade();
   }
 
-  function showDeckResults(id, wrap, results, selected){
+  function showResults(id, wrap, results, selected){
     if(!wrap) return;
     wrap.style.display='block';
     wrap.innerHTML=`
-      <div class="dj-jamendo-result">
-        <div class="dj-jam-track-info">
-          ${selected.image?`<img src="${selected.image}" class="dj-jam-art"/>`:
-            `<div class="dj-jam-art-placeholder">♫</div>`}
-          <div>
-            <div class="dj-jam-name">${esc(selected.name)}</div>
-            <div class="dj-jam-artist">${esc(selected.artist_name)}</div>
-            <div class="dj-jam-source">Jamendo · CC Licensed</div>
+      <div class="dj-result-card">
+        <div class="dj-result-main">
+          ${selected.artworkUrl60?`<img src="${selected.artworkUrl60}" class="dj-result-art"/>`:'<div class="dj-result-art-ph">♫</div>'}
+          <div class="dj-result-info">
+            <div class="dj-result-name">${esc(selected.trackName)}</div>
+            <div class="dj-result-artist">${esc(selected.artistName)}</div>
+            <div class="dj-result-badge">Apple Music · 30s preview</div>
           </div>
         </div>
-        ${results.length>1?`
-        <div class="dj-jam-alts">
-          <span style="font-size:.6rem;color:var(--text-dim)">Other results:</span>
-          ${results.slice(1,4).map((t,i)=>`
-            <button class="dj-jam-alt-btn" data-url="${t.audio}" data-name="${esc(t.name)}" data-artist="${esc(t.artist_name)}">
-              ${esc(t.name)} — ${esc(t.artist_name)}
-            </button>
-          `).join('')}
-        </div>
-        `:''}
+        ${results.length>1?`<div class="dj-result-alts">
+          ${results.slice(0,4).filter(r=>r!==selected).map(r=>`
+            <button class="dj-alt-btn" data-url="${r.previewUrl}" data-name="${esc(r.trackName)}" data-artist="${esc(r.artistName)}">
+              ${esc(r.trackName)} — ${esc(r.artistName)}
+            </button>`).join('')}
+        </div>`:''}
       </div>
     `;
-    // Wire alt buttons
-    wrap.querySelectorAll('.dj-jam-alt-btn').forEach(btn=>{
+    wrap.querySelectorAll('.dj-alt-btn').forEach(btn=>{
       btn.addEventListener('click',()=>{
-        setAudioSource(id,btn.dataset.url,'jamendo');
+        setAudio(id,btn.dataset.url);
         document.getElementById(`deck${id}TitleDisp`).textContent=btn.dataset.name;
         document.getElementById(`deck${id}ArtistDisp`).textContent=btn.dataset.artist;
         decks[id].trackName=`${btn.dataset.name} — ${btn.dataset.artist}`;
-        Notify.info(`Deck ${id}: Switched to "${btn.dataset.name}"`);
+        Notify.info(`Deck ${id}: switched to "${btn.dataset.name}"`);
       });
     });
   }
 
-  function showNoResults(id, wrap, track){
+  function showStatus(wrap, msg, color){
     if(!wrap) return;
     wrap.style.display='block';
-    const q=encodeURIComponent(`${track.title} ${track.artist||''}`);
+    wrap.innerHTML=`<div style="padding:.6rem .75rem;border:1px solid ${color};color:${color};font-size:.72rem;border-radius:2px">${msg}</div>`;
+  }
+
+  function showNoResults(wrap, track, q){
+    if(!wrap) return;
+    wrap.style.display='block';
     wrap.innerHTML=`
-      <div class="dj-jamendo-result" style="border-color:var(--accent2)">
-        <div style="font-size:.72rem;color:var(--accent2);margin-bottom:.5rem">
-          ⚠ No Jamendo match for "${esc(track.title)}"
-        </div>
-        <div style="font-size:.65rem;color:var(--text-dim);margin-bottom:.65rem">
-          Jamendo has CC-licensed music. Try uploading the track as a local file in DIY Vinyl.
-        </div>
-        <a href="https://www.jamendo.com/search?q=${q}" target="_blank" 
-           class="btn-secondary" style="font-size:.68rem;display:block;text-align:center;text-decoration:none">
-          Browse Jamendo ↗
-        </a>
+      <div class="dj-result-card" style="border-color:var(--accent2)">
+        <div style="font-size:.72rem;color:var(--accent2);margin-bottom:.4rem">No preview found for "${esc(track.title)}"</div>
+        <div style="font-size:.65rem;color:var(--text-dim);margin-bottom:.6rem">Upload the track as a local file in DIY Vinyl for full playback.</div>
+        <a href="https://music.apple.com/search?term=${q}" target="_blank" class="btn-secondary" style="font-size:.68rem;display:block;text-align:center;text-decoration:none">Search Apple Music ↗</a>
       </div>
     `;
   }
 
-  function showDeckStatus(id, wrap, msg, color){
+  function showCorsNote(wrap, track){
     if(!wrap) return;
     wrap.style.display='block';
-    wrap.innerHTML=`<div style="padding:.6rem .75rem;border:1px solid ${color};font-size:.72rem;color:${color};border-radius:2px">${msg}</div>`;
+    const q=encodeURIComponent(`${track.title} ${track.artist||''}`);
+    wrap.innerHTML=`
+      <div class="dj-result-card" style="border-color:var(--accent)">
+        <div style="font-size:.72rem;color:var(--accent);margin-bottom:.4rem">⚠ Preview search needs a server</div>
+        <div style="font-size:.65rem;color:var(--text-dim);margin-bottom:.6rem">
+          Run <code style="color:var(--accent);background:var(--surface2);padding:.1rem .3rem">npx serve .</code> instead of opening index.html directly.
+          Then previews load automatically.
+        </div>
+        <a href="https://music.apple.com/search?term=${q}" target="_blank" class="btn-secondary" style="font-size:.68rem;display:block;text-align:center;text-decoration:none">Search Apple Music ↗</a>
+      </div>
+    `;
   }
 
   function toggleDeck(id){
@@ -242,14 +219,10 @@ const DJMix = (() => {
     ensureCtx();
     if(audioCtx.state==='suspended') audioCtx.resume();
     if(d.playing){
-      d.audio.pause(); d.playing=false; stopDeck(id);
+      d.audio.pause(); d.playing=false; updateDeckUI(id,false);
     } else {
-      d.audio.play().then(()=>{
-        d.playing=true; updateDeckUI(id,true); applyCrossfade();
-        document.getElementById('djScreenText').textContent=d.trackName;
-      }).catch(e=>{
-        Notify.error(`Deck ${id}: Playback blocked — click play again after interacting`);
-      });
+      d.audio.play().then(()=>{ d.playing=true; updateDeckUI(id,true); applyCrossfade(); })
+        .catch(()=>{ Notify.warn('Click play again — browser requires interaction first'); });
     }
   }
 
@@ -266,17 +239,15 @@ const DJMix = (() => {
     if(btn){ btn.textContent=playing?'⏸':'▶'; btn.classList.toggle('active',playing); }
     document.getElementById(`disc${id}`)?.classList.toggle('playing',playing);
     document.getElementById(`arm${id}`)?.classList.toggle('playing',playing);
+    const screen=document.getElementById('djScreenText');
+    if(screen&&playing) screen.textContent=decks[id].trackName;
   }
 
   function applyCrossfade(){
-    ensureCtx();
-    const volA=Math.cos(crossfade*Math.PI/2);
-    const volB=Math.cos((1-crossfade)*Math.PI/2);
-    decks.A.gainNode?.gain.setTargetAtTime(volA,audioCtx.currentTime,.02);
-    decks.B.gainNode?.gain.setTargetAtTime(volB,audioCtx.currentTime,.02);
-    // Also set direct audio volume as fallback
-    if(decks.A.audio) decks.A.audio.volume=volA;
-    if(decks.B.audio) decks.B.audio.volume=volB;
+    if(!audioCtx) return;
+    const vA=Math.cos(crossfade*Math.PI/2), vB=Math.cos((1-crossfade)*Math.PI/2);
+    decks.A.gainNode?.gain.setTargetAtTime(vA,audioCtx.currentTime,.02);
+    decks.B.gainNode?.gain.setTargetAtTime(vB,audioCtx.currentTime,.02);
   }
 
   function tapBpm(){
@@ -288,9 +259,7 @@ const DJMix = (() => {
   }
 
   function exportMix(){
-    const tracks=[];
-    if(decks.A.trackName) tracks.push(`Deck A: ${decks.A.trackName}`);
-    if(decks.B.trackName) tracks.push(`Deck B: ${decks.B.trackName}`);
+    const tracks=[decks.A,decks.B].filter(d=>d.trackName).map((d,i)=>`Deck ${i?'B':'A'}: ${d.trackName}`);
     if(!tracks.length){Notify.warn('Load tracks first!');return;}
     const text=`VNportal DJ Mix\n${new Date().toLocaleDateString()}\n\n${tracks.join('\n')}\n\nhttps://github.com/huangd-816/VNportal`;
     const blob=new Blob([text],{type:'text/plain'});
