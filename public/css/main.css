@@ -1976,3 +1976,22 @@ body:has(.player-bar.visible) .main-content{padding-bottom:calc(var(--player-h) 
   color: var(--accent); text-decoration: none;
 }
 .dj-yt-search-link:hover { text-decoration: underline; }
+
+/* DJ file:// mode */
+.dj-yt-file-mode { text-align: center; padding: .6rem .4rem; }
+.dj-file-notice  { font-size: .7rem; margin-bottom: .6rem; }
+.dj-file-btns    { display: flex; gap: .5rem; justify-content: center; }
+.dj-open-btn {
+  display: flex; align-items: center; gap: .4rem;
+  padding: .55rem .9rem; font-family: var(--font-m); font-size: .72rem;
+  text-decoration: none; font-weight: bold; cursor: pointer;
+  transition: all .18s; border-radius: 3px;
+}
+.dj-yt-btn       { background: #ff0000; color: #fff; }
+.dj-yt-btn:hover { background: #cc0000; }
+.dj-yt-search-btn { background: transparent; border: 1px solid var(--border); color: var(--text-dim); }
+.dj-yt-search-btn:hover { border-color: var(--accent); color: var(--accent); }
+.dj-server-tip {
+  font-size: .6rem; color: var(--text-dim); margin-top: .6rem; letter-spacing: .04em;
+}
+.dj-server-tip code { color: var(--accent); background: var(--surface2); padding: .1rem .3rem; border-radius: 2px; }
