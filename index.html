@@ -462,23 +462,27 @@
         </div>
       </div>
 
-      <!-- DISCUSSION — Floating within workshop page -->
-      <div class="ws-chat-float" id="wsChatFloat">
-        <div class="ws-chat-float-bar" id="wsChatBar">
-          <span class="ws-chat-float-title">💬 Discussion</span>
+      <!-- DISCUSSION — in-page section, minimizable to bottom corner -->
+      <div class="ws-chat-section" id="wsChatSection" style="position:relative;z-index:1;margin-top:2rem">
+        <div class="ws-chat-header">
+          <div class="ws-section-title" style="margin:0">💬 Discussion</div>
           <div class="chat-float-traffic">
-            <button class="tl-btn tl-red"    title="Clear all" onclick="if(confirm('Clear all messages?')){localStorage.removeItem('vn_chat');Workshop.onShow();}"></button>
-            <button class="tl-btn tl-yellow" title="Minimize"  id="wsChatMinBtn" onclick="WsChat.toggle()"></button>
-            <button class="tl-btn tl-green"  title="Restore"   id="wsChatMaxBtn" onclick="WsChat.restore()" style="display:none"></button>
+            <button class="tl-btn tl-red"    title="Clear all" onclick="if(confirm('Clear all?')){localStorage.removeItem('vn_chat');WsChat.render();}"></button>
+            <button class="tl-btn tl-yellow" title="Minimize to corner" id="wsChatMinBtn" onclick="WsChat.minimize()"></button>
+            <button class="tl-btn tl-green"  title="Restore" id="wsChatMaxBtn" onclick="WsChat.restore()" style="display:none"></button>
           </div>
         </div>
-        <div class="ws-chat-float-body" id="wsChatBody">
-          <div class="ws-chat-float-msgs" id="wsChatMsgs"></div>
-          <div class="ws-chat-float-input">
-            <input id="wsChatInput" placeholder="Type a message..." maxlength="200" class="ws-chat-float-textbox"/>
-            <button id="wsChatSend" class="ws-chat-float-sendbtn">→</button>
+        <div id="wsChatBody" class="ws-chat-body-wrap">
+          <div class="ws-chat-messages" id="wsChatMsgs"></div>
+          <div class="ws-chat-input-row">
+            <input type="text" id="wsChatInput" placeholder="Say something..." class="ws-chat-msg" maxlength="200"/>
+            <button class="btn-primary" id="wsChatSend" style="flex-shrink:0">Send</button>
           </div>
         </div>
+      </div>
+      <!-- Minimized pill - stays within workshop -->
+      <div class="ws-chat-pill hidden" id="wsChatPill" onclick="WsChat.restore()">
+        💬 Discussion <span style="font-size:.55rem;opacity:.7">(click to expand)</span>
       </div>
     </section>
 

@@ -1,31 +1,30 @@
 // ============================================
 // VNportal — DJ Mix
-// iTunes Search API — free, no key needed
-// 30-second previews of mainstream music
-// Plays directly in-browser via Web Audio
+// YouTube IFrame embed — full tracks, in-browser
+// Works with: npx serve . (local server)
 // ============================================
 const DJMix = (() => {
-  const ITUNES = 'https://itunes.apple.com/search';
-
   let audioCtx=null, masterGain=null;
   const decks={
-    A:{audio:null,gainNode:null,playing:false,trackName:'',url:null},
-    B:{audio:null,gainNode:null,playing:false,trackName:'',url:null},
+    A:{gainNode:null,playing:false,trackName:'',ytPlayer:null,ytReady:false},
+    B:{gainNode:null,playing:false,trackName:'',ytPlayer:null,ytReady:false},
   };
-  let crossfade=0.5, tapTimes=[], animFrame=null;
+  let ytApiLoaded=false, crossfade=0.5, tapTimes=[], animFrame=null;
 
-  function ensureCtx(){
-    if(audioCtx) return;
-    audioCtx  = new(window.AudioContext||window.webkitAudioContext)();
-    masterGain = audioCtx.createGain(); masterGain.gain.value=0.8;
-    masterGain.connect(audioCtx.destination);
-    ['A','B'].forEach(id=>{
-      decks[id].gainNode = audioCtx.createGain();
-      decks[id].gainNode.connect(masterGain);
-    });
+  // Load YouTube IFrame API once
+  function loadYTApi(){
+    if(document.getElementById('ytApiScript')||window.YT) return;
+    const s=document.createElement('script');
+    s.id='ytApiScript';
+    s.src='https://www.youtube.com/iframe_api';
+    document.head.appendChild(s);
   }
 
-  function init(){ populateDecks(); bindControls(); startVisualizer(); }
+  window.onYouTubeIframeAPIReady=function(){
+    ytApiLoaded=true;
+  };
+
+  function init(){ loadYTApi(); populateDecks(); bindControls(); startVisualizer(); }
 
   function populateDecks(){
     const{vinyls}=Store.get();
@@ -47,14 +46,15 @@ const DJMix = (() => {
       document.getElementById(`deck${id}Play`)?.addEventListener('click',()=>toggleDeck(id));
       document.getElementById(`deck${id}Cue`)?.addEventListener('click',()=>cueDeck(id));
       document.getElementById(`deck${id}Speed`)?.addEventListener('input',e=>{
-        if(decks[id].audio) decks[id].audio.playbackRate=Math.max(0.5,Math.min(2,+e.target.value));
+        try{ decks[id].ytPlayer?.setPlaybackRate?.(+e.target.value); }catch{}
       });
     });
     document.getElementById('crossfader')?.addEventListener('input',e=>{
       crossfade=+e.target.value; applyCrossfade();
     });
     document.getElementById('masterVol')?.addEventListener('input',e=>{
-      ensureCtx(); if(masterGain) masterGain.gain.value=+e.target.value;
+      const vol=Math.round(+e.target.value*100);
+      ['A','B'].forEach(id=>{ try{ decks[id].ytPlayer?.setVolume?.(vol); }catch{} });
     });
     document.getElementById('tapBpmBtn')?.addEventListener('click',tapBpm);
     document.getElementById('djExportBtn')?.addEventListener('click',exportMix);
@@ -77,177 +77,61 @@ const DJMix = (() => {
     if(disc&&coverSrc){ disc.style.backgroundImage=`url(${coverSrc})`; disc.style.backgroundSize='cover'; }
 
     const wrap=document.getElementById(`deck${id}SpotifyEmbed`);
-    if(wrap) wrap.innerHTML='';
+    if(wrap){ wrap.innerHTML=''; wrap.style.display='block'; }
 
-    // 1. Try local file first
-    if(typeof DB!=='undefined'){
-      const key=DB.trackKey(vinylId,ti);
-      const hasLocal=await DB.hasFile(key).catch(()=>false);
-      if(hasLocal){
-        const url=await DB.getFileURL(key);
-        setAudio(id,url);
-        showStatus(wrap,'📁 Local file — full track','#27ae60');
-        Notify.success(`Deck ${id}: local file loaded`);
-        return;
-      }
-    }
+    // Build YouTube search query — exact title + artist
+    const q=encodeURIComponent(`${track.title} ${track.artist||''} official`);
+    const searchUrl=`https://www.youtube.com/results?search_query=${q}`;
 
-    // 2. iTunes Search API — free, no key, 30s previews
-    const loader=Notify.loading(`Finding "${track.title}"...`);
-    try {
-      const q=encodeURIComponent(`${track.title} ${track.artist||''}`);
-      const url=`${ITUNES}?term=${q}&media=music&entity=song&limit=8`;
-      // iTunes API requires a callback hack to avoid CORS on file://
-      // Use a proxy-free approach: load via JSON-P or direct fetch
-      const res=await fetch(url);
-      const data=await res.json();
-      Notify.dismiss(loader);
+    // Embed YouTube search results iframe — full tracks
+    const embedUrl=`https://www.youtube.com/embed?listType=search&list=${q}&autoplay=0&controls=1&rel=0&modestbranding=1`;
 
-      const results=(data.results||[]).filter(r=>r.previewUrl);
-      if(!results.length){
-        showNoResults(wrap, track, q);
-        Notify.warn(`Deck ${id}: No preview found for "${track.title}"`);
-        return;
-      }
-
-      // Best match: prioritize title match
-      const best=results.find(r=>
-        r.trackName?.toLowerCase().includes(track.title.toLowerCase())
-      ) || results[0];
-
-      setAudio(id, best.previewUrl);
-      showResults(id, wrap, results, best);
-      Notify.success(`Deck ${id}: "${best.trackName}" — 30s preview ♫`);
-
-    } catch(e){
-      Notify.dismiss(loader);
-      // CORS issue on file:// — show manual URL fallback
-      showCorsNote(wrap, track);
-    }
-  }
-
-  function setAudio(id, url){
-    ensureCtx();
-    const d=decks[id];
-    if(d.audio){ d.audio.pause(); d.audio=null; }
-
-    d.url=url;
-    const audio=new Audio();
-    audio.crossOrigin='anonymous';
-    audio.src=url;
-    audio.preload='none';
-    audio.addEventListener('ended',()=>stopDeck(id));
-    d.audio=audio;
-
-    // Connect to Web Audio for real crossfading
-    try{
-      const src=audioCtx.createMediaElementSource(audio);
-      src.connect(d.gainNode);
-    }catch{}
-    applyCrossfade();
-  }
-
-  function showResults(id, wrap, results, selected){
-    if(!wrap) return;
-    wrap.style.display='block';
-    wrap.innerHTML=`
-      <div class="dj-result-card">
-        <div class="dj-result-main">
-          ${selected.artworkUrl60?`<img src="${selected.artworkUrl60}" class="dj-result-art"/>`:'<div class="dj-result-art-ph">♫</div>'}
-          <div class="dj-result-info">
-            <div class="dj-result-name">${esc(selected.trackName)}</div>
-            <div class="dj-result-artist">${esc(selected.artistName)}</div>
-            <div class="dj-result-badge">Apple Music · 30s preview</div>
+    if(wrap){
+      wrap.innerHTML=`
+        <div class="dj-yt-wrap">
+          <div class="dj-yt-label">
+            <svg width="14" height="10" viewBox="0 0 24 17" fill="#ff0000"><path d="M23.5 2.6A3 3 0 0 0 21.4.4C19.5 0 12 0 12 0S4.5 0 2.6.5A3 3 0 0 0 .5 2.6C0 4.5 0 8.5 0 8.5s0 4 .5 5.9A3 3 0 0 0 2.6 16.5C4.5 17 12 17 12 17s7.5 0 9.4-.5a3 3 0 0 0 2.1-2.1C24 12.5 24 8.5 24 8.5s0-4-.5-5.9zM9.5 12V5l6.5 3.5L9.5 12z"/></svg>
+            Full track · YouTube
+          </div>
+          <iframe
+            id="ytEmbed${id}"
+            src="${embedUrl}"
+            width="100%" height="120"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope"
+            allowfullscreen
+            style="border:none;border-radius:4px"
+          ></iframe>
+          <div class="dj-yt-hint">
+            Wrong track? 
+            <a href="${searchUrl}" target="_blank" class="dj-yt-search-link">Search YouTube ↗</a>
           </div>
         </div>
-        ${results.length>1?`<div class="dj-result-alts">
-          ${results.slice(0,4).filter(r=>r!==selected).map(r=>`
-            <button class="dj-alt-btn" data-url="${r.previewUrl}" data-name="${esc(r.trackName)}" data-artist="${esc(r.artistName)}">
-              ${esc(r.trackName)} — ${esc(r.artistName)}
-            </button>`).join('')}
-        </div>`:''}
-      </div>
-    `;
-    wrap.querySelectorAll('.dj-alt-btn').forEach(btn=>{
-      btn.addEventListener('click',()=>{
-        setAudio(id,btn.dataset.url);
-        document.getElementById(`deck${id}TitleDisp`).textContent=btn.dataset.name;
-        document.getElementById(`deck${id}ArtistDisp`).textContent=btn.dataset.artist;
-        decks[id].trackName=`${btn.dataset.name} — ${btn.dataset.artist}`;
-        Notify.info(`Deck ${id}: switched to "${btn.dataset.name}"`);
-      });
-    });
-  }
-
-  function showStatus(wrap, msg, color){
-    if(!wrap) return;
-    wrap.style.display='block';
-    wrap.innerHTML=`<div style="padding:.6rem .75rem;border:1px solid ${color};color:${color};font-size:.72rem;border-radius:2px">${msg}</div>`;
-  }
-
-  function showNoResults(wrap, track, q){
-    if(!wrap) return;
-    wrap.style.display='block';
-    wrap.innerHTML=`
-      <div class="dj-result-card" style="border-color:var(--accent2)">
-        <div style="font-size:.72rem;color:var(--accent2);margin-bottom:.4rem">No preview found for "${esc(track.title)}"</div>
-        <div style="font-size:.65rem;color:var(--text-dim);margin-bottom:.6rem">Upload the track as a local file in DIY Vinyl for full playback.</div>
-        <a href="https://music.apple.com/search?term=${q}" target="_blank" class="btn-secondary" style="font-size:.68rem;display:block;text-align:center;text-decoration:none">Search Apple Music ↗</a>
-      </div>
-    `;
-  }
-
-  function showCorsNote(wrap, track){
-    if(!wrap) return;
-    wrap.style.display='block';
-    const q=encodeURIComponent(`${track.title} ${track.artist||''}`);
-    wrap.innerHTML=`
-      <div class="dj-result-card" style="border-color:var(--accent)">
-        <div style="font-size:.72rem;color:var(--accent);margin-bottom:.4rem">⚠ Preview search needs a server</div>
-        <div style="font-size:.65rem;color:var(--text-dim);margin-bottom:.6rem">
-          Run <code style="color:var(--accent);background:var(--surface2);padding:.1rem .3rem">npx serve .</code> instead of opening index.html directly.
-          Then previews load automatically.
-        </div>
-        <a href="https://music.apple.com/search?term=${q}" target="_blank" class="btn-secondary" style="font-size:.68rem;display:block;text-align:center;text-decoration:none">Search Apple Music ↗</a>
-      </div>
-    `;
+      `;
+    }
+    Notify.success(`Deck ${id}: "${track.title}" — click play in the video`);
   }
 
   function toggleDeck(id){
-    const d=decks[id];
-    if(!d.audio||!d.url){ Notify.warn(`Deck ${id}: Load a track first`); return; }
-    ensureCtx();
-    if(audioCtx.state==='suspended') audioCtx.resume();
-    if(d.playing){
-      d.audio.pause(); d.playing=false; updateDeckUI(id,false);
-    } else {
-      d.audio.play().then(()=>{ d.playing=true; updateDeckUI(id,true); applyCrossfade(); })
-        .catch(()=>{ Notify.warn('Click play again — browser requires interaction first'); });
-    }
+    Notify.info(`Use the YouTube player controls on Deck ${id}`);
   }
-
   function cueDeck(id){
-    if(decks[id].audio) decks[id].audio.currentTime=0;
-  }
-
-  function stopDeck(id){
-    decks[id].playing=false; updateDeckUI(id,false);
-  }
-
-  function updateDeckUI(id,playing){
-    const btn=document.getElementById(`deck${id}Play`);
-    if(btn){ btn.textContent=playing?'⏸':'▶'; btn.classList.toggle('active',playing); }
-    document.getElementById(`disc${id}`)?.classList.toggle('playing',playing);
-    document.getElementById(`arm${id}`)?.classList.toggle('playing',playing);
-    const screen=document.getElementById('djScreenText');
-    if(screen&&playing) screen.textContent=decks[id].trackName;
+    const iframe=document.getElementById(`ytEmbed${id}`);
+    if(iframe){ const src=iframe.src; iframe.src=''; setTimeout(()=>iframe.src=src,100); }
   }
 
   function applyCrossfade(){
-    if(!audioCtx) return;
-    const vA=Math.cos(crossfade*Math.PI/2), vB=Math.cos((1-crossfade)*Math.PI/2);
-    decks.A.gainNode?.gain.setTargetAtTime(vA,audioCtx.currentTime,.02);
-    decks.B.gainNode?.gain.setTargetAtTime(vB,audioCtx.currentTime,.02);
+    const vA=Math.round(Math.cos(crossfade*Math.PI/2)*100);
+    const vB=Math.round(Math.cos((1-crossfade)*Math.PI/2)*100);
+    // YouTube iframes control their own volume — set via postMessage
+    ['A','B'].forEach((id,i)=>{
+      const iframe=document.getElementById(`ytEmbed${id}`);
+      const vol=i===0?vA:vB;
+      try{
+        iframe?.contentWindow?.postMessage(JSON.stringify({
+          event:'command',func:'setVolume',args:[vol]
+        }),'https://www.youtube.com');
+      }catch{}
+    });
   }
 
   function tapBpm(){
@@ -276,7 +160,7 @@ const DJMix = (() => {
     function tick(){
       f++;
       [['A',ctxA,cA],['B',ctxB,cB]].forEach(([id,c,cv])=>{
-        const active=decks[id].playing;
+        const active=!!document.getElementById(`ytEmbed${id}`);
         c.clearRect(0,0,cv.width,cv.height);
         for(let i=0;i<12;i++){
           const h=active?(0.15+Math.sin(f*.08+i*.5)*.25+Math.random()*.4)*cv.height:4;
