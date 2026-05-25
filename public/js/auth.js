@@ -70,16 +70,16 @@ const Auth = (() => {
     };
 
     if(provider==='spotify'){
-      Notify.info('Connecting via Spotify...');
-      if(typeof Spotify!=='undefined') Spotify.login();
+      if(typeof SpotifyAuth!=='undefined') SpotifyAuth.login();
+      else Notify.warn('Spotify module not loaded');
       return;
     }
 
     const cfg=configs[provider];
     if(!cfg){ Notify.warn('Provider not configured yet'); return; }
 
-    // For now — show setup instructions
-    Notify.warn(`${cfg.name} OAuth requires hosting. For now, use email signup!`);
+    // Google/Discord require a hosted domain + backend redirect handler
+    showOAuthModal(cfg.name);
 
     // When hosted, uncomment this:
     // const popup = window.open(cfg.url, `${provider}_auth`, 'width=500,height=600');
@@ -240,7 +240,30 @@ const Auth = (() => {
     document.getElementById(formId)?.classList.remove('hidden');
   }
 
-  function closeModal(){
+  function showOAuthModal(name){
+    let m=document.getElementById('oauthNoteModal');
+    if(m) m.remove();
+    m=document.createElement('div');
+    m.id='oauthNoteModal';
+    m.className='auth-modal-overlay';
+    m.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.8);display:flex;align-items:center;justify-content:center;z-index:12000';
+    m.innerHTML=`
+      <div style="background:var(--surface);border:1px solid var(--border);width:360px;max-width:92vw;padding:2rem;position:relative">
+        <button onclick="this.parentElement.parentElement.remove()" style="position:absolute;top:.75rem;right:.75rem;background:none;border:none;color:var(--text-dim);cursor:pointer;font-size:1rem">✕</button>
+        <div style="font-family:var(--font-d);font-size:1.4rem;color:var(--accent);margin-bottom:.75rem">${name} Sign-In</div>
+        <p style="font-size:.78rem;color:var(--text-dim);line-height:1.7;margin-bottom:1rem">
+          ${name} OAuth requires a hosted domain with a backend callback handler —
+          it can't run on <code style="color:var(--accent);background:var(--surface2);padding:.1rem .3rem">file://</code> or <code style="color:var(--accent);background:var(--surface2);padding:.1rem .3rem">localhost</code>.<br/><br/>
+          <b style="color:var(--text)">For now, use email sign-up</b> — when VNportal is hosted publicly (GitHub Pages + backend), ${name} login will work automatically.
+        </p>
+        <button class="btn-primary" style="width:100%" onclick="this.parentElement.parentElement.remove();Auth.showModal('signup')">Use Email Instead</button>
+      </div>
+    `;
+    document.body.appendChild(m);
+    m.addEventListener('click',e=>{if(e.target===m)m.remove();});
+  }
+
+    function closeModal(){
     const modal=document.getElementById('authModal');
     if(modal) modal.style.display='none';
   }

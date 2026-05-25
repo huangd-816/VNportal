@@ -2046,3 +2046,60 @@ body:has(.player-bar.visible) .main-content{padding-bottom:calc(var(--player-h) 
   padding: .25rem .6rem; transition: all .15s;
 }
 .dj-change-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+/* DJ Spotify status badges */
+.dj-sp-ready  { font-size:.65rem; color:#1DB954; margin-top:.35rem; }
+.dj-sp-free   { font-size:.65rem; color:var(--accent2); margin-top:.35rem; }
+.dj-sp-hint   { font-size:.62rem; color:var(--text-dim); margin-top:.35rem; }
+.dj-sp-card   { border-color: rgba(29,185,84,.35) !important; background: rgba(29,185,84,.03) !important; }
+
+/* ==========================================
+   SOUNDTRACK STUDIO SECTION
+   ========================================== */
+.soundtrack-section {
+  margin-top: 3rem;
+  border-top: 1px solid var(--border);
+  padding-top: 2rem;
+}
+.soundtrack-header { margin-bottom: 1.5rem; }
+.soundtrack-title {
+  font-family: var(--font-d); font-size: 2rem; letter-spacing: .06em;
+  color: var(--text); margin: 0;
+}
+.soundtrack-title em { color: var(--accent); font-style: italic; }
+.soundtrack-sub { font-size: .72rem; color: var(--text-dim); letter-spacing: .12em; margin-top: .25rem; }
+
+.soundtrack-apps {
+  display: grid;
+  grid-template-columns: repeat(3,1fr);
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+@media(max-width:900px){ .soundtrack-apps{ grid-template-columns:1fr; } }
+
+.strack-card {
+  background: var(--surface2); border: 1px solid var(--border);
+  padding: 1.25rem; display: flex; flex-direction: column; gap: .75rem;
+  transition: border-color .2s;
+}
+.strack-card:hover { border-color: var(--accent); }
+.strack-icon  { font-size: 1.8rem; }
+.strack-name  { font-family: var(--font-d); font-size: 1.2rem; letter-spacing: .06em; color: var(--text); }
+.strack-desc  { font-size: .72rem; color: var(--text-dim); line-height: 1.6; margin-top: .2rem; }
+.strack-tags  { display: flex; gap: .35rem; flex-wrap: wrap; margin-top: .35rem; }
+.strack-tags span {
+  font-size: .58rem; letter-spacing: .1em; color: var(--text-dim);
+  border: 1px solid var(--border); padding: .15rem .4rem;
+}
+.strack-open { margin-top: auto; font-size: .72rem; }
+
+.strack-embed-wrap {
+  border: 1px solid var(--border); overflow: hidden;
+}
+.strack-embed-wrap.hidden { display: none; }
+.strack-embed-bar {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: .65rem 1rem; background: var(--surface2);
+  border-bottom: 1px solid var(--border);
+  font-family: var(--font-d); font-size: .9rem; letter-spacing: .06em; color: var(--accent);
+}
