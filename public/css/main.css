@@ -2103,3 +2103,13 @@ body:has(.player-bar.visible) .main-content{padding-bottom:calc(var(--player-h) 
   border-bottom: 1px solid var(--border);
   font-family: var(--font-d); font-size: .9rem; letter-spacing: .06em; color: var(--accent);
 }
+
+/* ── Auth coming-soon badge ── */
+.auth-oauth-coming { opacity: .6; cursor: default !important; }
+.auth-oauth-coming:hover { border-color: var(--border) !important; }
+.coming-badge {
+  font-size: .52rem; background: var(--border);
+  color: var(--text-dim); padding: .1rem .3rem;
+  border-radius: 2px; letter-spacing: .08em;
+  vertical-align: middle; margin-left: .2rem;
+}
