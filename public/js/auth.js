@@ -334,6 +334,10 @@ const Auth = (() => {
 
   function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
 
-  const api={init,login,signup,logout,getUser,isLoggedIn,showModal,_logout:logout,_editProfile:editProfile,_handleOAuth:handleOAuth};
+  function loginWithProvider(user){
+    setSession({id:user.id,name:user.name,email:user.email||'',avatar:user.avatar||null,provider:user.provider});
+  }
+
+  const api={init,login,signup,logout,getUser,isLoggedIn,showModal,loginWithProvider,_logout:logout,_editProfile:editProfile,_handleOAuth:handleOAuth};
   window.Auth=api; return api;
 })();

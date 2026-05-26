@@ -127,6 +127,16 @@ const SpotifyAuth = (() => {
     const p=await api('/me'); if(!p) return;
     userProfile=p; isPremiumUser=p.product==='premium';
     updateUI();
+    // Sync into Auth so the profile button shows the Spotify user
+    if(typeof Auth!=='undefined'&&Auth.loginWithProvider){
+      Auth.loginWithProvider({
+        id:'spotify_'+p.id,
+        name:p.display_name,
+        email:p.email||'',
+        avatar:p.images?.[0]?.url||null,
+        provider:'spotify',
+      });
+    }
     if(isPremiumUser) Notify.success(`Spotify ✦ Premium connected — ${p.display_name}`);
     else Notify.info(`Spotify connected (Free) — ${p.display_name} · 30s previews only`);
   }
