@@ -92,6 +92,32 @@ const DJMix = (() => {
         sel.appendChild(o);
       }));
     });
+    autoLoadDecks(vinyls);
+  }
+
+  function autoLoadDecks(vinyls){
+    // Collect all tracks across vinyls in order
+    const all=[];
+    vinyls.forEach(v=>(v.tracks||[]).forEach((t,ti)=>all.push({vinylId:v.id,ti,label:`${t.title} — ${t.artist}`})));
+    if(!all.length) return;
+
+    // Prefer currently playing vinyl's tracks first
+    const current=typeof Store!=='undefined'?Store.getCurrentVinyl():null;
+    let pool=all;
+    if(current){
+      const cur=all.filter(x=>x.vinylId===current.id);
+      const rest=all.filter(x=>x.vinylId!==current.id);
+      pool=[...cur,...rest];
+    }
+
+    ['A','B'].forEach((id,i)=>{
+      if(decks[id].mode) return; // already loaded
+      const entry=pool[i]||pool[0];
+      if(!entry) return;
+      const sel=document.getElementById(`deck${id}Select`);
+      if(sel){ sel.value=`${entry.vinylId}:${entry.ti}`; }
+      loadFromVinyl(id,`${entry.vinylId}:${entry.ti}`);
+    });
   }
 
   function initDropZones(){
@@ -498,7 +524,9 @@ const DJMix = (() => {
     setLocalAudio(id,blobUrl,name);
     Notify.success(`Deck ${id}: "${name}" imported from Soundtrap`);
   }
-  function onShow(){populateDecks();}
+  function onShow(){
+    populateDecks();
+  }
   function enableSpotifySDK(){ loadSpotifySDK(); }
   return{init,onShow,_loadFile,enableSpotifySDK};
 })();
