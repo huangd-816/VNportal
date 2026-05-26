@@ -220,7 +220,6 @@ const DJMix = (() => {
     document.getElementById(`deckFileNF${id}`)?.addEventListener('change',e=>{
       if(e.target.files[0]) loadLocalFile(id,e.target.files[0]);
     });
-    Notify.warn(`Not found — drop an MP3 for "${track.title}"`);
   }
 
   function showSpotifyResults(id, tracks, original, wrap){

@@ -1,6 +1,6 @@
 const SpotifyAuth = (() => {
   const CLIENT_ID = '032428c33a9b4c1d86e37f48f18180c6';
-  const REDIRECT  = 'http://127.0.0.1:4000';
+  const REDIRECT  = window.location.origin;
   const SCOPES    = 'streaming user-read-email user-read-private user-read-playback-state user-modify-playback-state user-read-currently-playing';
 
   let accessToken=null, tokenExpiry=0, isPremiumUser=false, userProfile=null;
