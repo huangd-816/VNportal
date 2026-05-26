@@ -53,7 +53,13 @@ const Auth = (() => {
     saveSession(currentUser); updateUI(); closeModal();
   }
 
-  function logout(){ currentUser=null; clearSession(); updateUI(); Notify.info('Logged out'); }
+  function logout(){
+    if(currentUser?.provider==='google'&&window.google?.accounts?.id){
+      google.accounts.id.disableAutoSelect();
+      google.accounts.id.revoke(currentUser.email,()=>{});
+    }
+    currentUser=null; clearSession(); updateUI(); Notify.info('Signed out');
+  }
   function getUser(){ return currentUser; }
   function isLoggedIn(){ return !!currentUser; }
 

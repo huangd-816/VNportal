@@ -337,14 +337,14 @@
           <p class="soundtrack-sub">Create original music for your vinyl</p>
         </div>
         <div class="soundtrack-apps">
-          <div class="strack-card" id="soundtrapCard">
-            <div class="strack-icon">🌐</div>
+          <div class="strack-card">
+            <div class="strack-icon">🎧</div>
             <div class="strack-info">
-              <div class="strack-name">Soundtrap</div>
-              <div class="strack-desc">Browser-based DAW — record, mix, collaborate online. No install needed.</div>
-              <div class="strack-tags"><span>Free tier</span><span>Browser</span><span>Collab</span></div>
+              <div class="strack-name">djay</div>
+              <div class="strack-desc">Professional DJ app by Algoriddim. Mix, scratch & remix your selected vinyl track.</div>
+              <div class="strack-tags"><span>Mac/iOS</span><span>AI mix</span><span>Stems</span></div>
             </div>
-            <button class="btn-primary strack-open" onclick="SoundtrackStudio.open('soundtrap')">Open Studio ↗</button>
+            <button class="btn-primary strack-open" onclick="SoundtrackStudio.openDjay()">Open in djay ↗</button>
           </div>
           <div class="strack-card">
             <div class="strack-icon">🍎</div>
@@ -355,27 +355,6 @@
             </div>
             <button class="btn-secondary strack-open" onclick="SoundtrackStudio.open('logic')">Open / Download ↗</button>
           </div>
-          <div class="strack-card">
-            <div class="strack-icon">🎹</div>
-            <div class="strack-info">
-              <div class="strack-name">GarageBand</div>
-              <div class="strack-desc">Free Apple DAW for Mac & iOS. Great for beginners. Export MP3 → load onto deck.</div>
-              <div class="strack-tags"><span>Free</span><span>Mac/iOS</span><span>Beginner</span></div>
-            </div>
-            <button class="btn-secondary strack-open" onclick="SoundtrackStudio.open('garageband')">Open ↗</button>
-          </div>
-        </div>
-
-        <!-- Soundtrap embed panel -->
-        <div class="strack-embed-wrap hidden" id="soundtrapEmbed">
-          <div class="strack-embed-bar">
-            <span>Soundtrap Studio</span>
-            <div style="display:flex;gap:.5rem;align-items:center">
-              <button class="btn-secondary" style="font-size:.65rem;padding:.3rem .65rem" onclick="SoundtrackStudio.importFromSoundtrap()">⬇ Import to Deck A</button>
-              <button class="btn-secondary" style="font-size:.65rem;padding:.3rem .65rem" onclick="document.getElementById('soundtrapEmbed').classList.add('hidden')">✕</button>
-            </div>
-          </div>
-          <iframe id="soundtrapFrame" allow="microphone;camera;midi;encrypted-media" style="width:100%;height:500px;border:none;display:block"></iframe>
         </div>
       </div>
     </section>

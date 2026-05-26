@@ -475,35 +475,45 @@ const DJMix = (() => {
 // ── Soundtrack Studio ────────────────────
 const SoundtrackStudio = (() => {
   function open(app){
-    if(app==='soundtrap'){
-      const embed=document.getElementById('soundtrapEmbed');
-      if(embed){
-        embed.classList.toggle('hidden');
-        if(!embed.classList.contains('hidden')){
-          const iframe=document.getElementById('soundtrapFrame');
-          if(iframe&&!iframe.src) iframe.src='https://www.soundtrap.com/studio';
-        }
-      }
-    } else if(app==='logic'){
-      window.open('https://www.apple.com/logic-pro/','_blank');
-    } else if(app==='garageband'){
-      window.open('https://www.apple.com/mac/garageband/','_blank');
+    if(app==='logic') window.open('https://www.apple.com/logic-pro/','_blank');
+  }
+
+  function openDjay(){
+    // Get currently selected vinyl track
+    const vinyl = typeof Store!=='undefined' ? Store.getCurrentVinyl() : null;
+    const track = vinyl?.tracks?.[0];
+    const query = track ? `${track.title} ${track.artist}`.trim() : '';
+
+    // Try to jump to the DJ Mix page with this track pre-loaded
+    if(track && typeof App!=='undefined') App.navigate('mix');
+
+    // Attempt to open djay via URL scheme (works if djay is installed on Mac/iOS)
+    const launched = attemptDjayLaunch(query);
+
+    if(query){
+      Notify.success(`Opening djay with "${track.title}" by ${track.artist}`);
+    } else {
+      Notify.info('Opening djay — select a vinyl first to load a track automatically');
+    }
+
+    // Fallback to website after short delay if app didn't open
+    if(!launched){
+      const url = query
+        ? `https://www.algoriddim.com/djay-mac#search=${encodeURIComponent(query)}`
+        : 'https://www.algoriddim.com/djay-mac';
+      setTimeout(()=>window.open(url,'_blank'), 300);
     }
   }
 
-  function importFromSoundtrap(){
-    Notify.info('Export from Soundtrap: File → Export → MP3, then drop it onto Deck A below');
-    const input=document.createElement('input');
-    input.type='file'; input.accept='audio/*';
-    input.onchange=e=>{
-      const file=e.target.files[0]; if(!file) return;
-      const blob=URL.createObjectURL(file);
-      if(typeof DJMix!=='undefined') DJMix._loadFile('A',file,blob);
-      else Notify.warn('Load the DJ Mix page first');
-    };
-    input.click();
+  function attemptDjayLaunch(query){
+    try{
+      // djay URL scheme — opens the app if installed
+      const scheme = query ? `djay://search?q=${encodeURIComponent(query)}` : 'djay://';
+      window.location.href = scheme;
+      return true;
+    }catch{ return false; }
   }
 
-  window.SoundtrackStudio={open,importFromSoundtrap};
+  window.SoundtrackStudio={open,openDjay};
   return window.SoundtrackStudio;
 })();
