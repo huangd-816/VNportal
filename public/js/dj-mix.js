@@ -479,39 +479,21 @@ const SoundtrackStudio = (() => {
   }
 
   function openDjay(){
-    // Get currently selected vinyl track
     const vinyl = typeof Store!=='undefined' ? Store.getCurrentVinyl() : null;
     const track = vinyl?.tracks?.[0];
     const query = track ? `${track.title} ${track.artist}`.trim() : '';
 
-    // Try to jump to the DJ Mix page with this track pre-loaded
+    // Navigate to DJ Mix page with the current track
     if(track && typeof App!=='undefined') App.navigate('mix');
 
-    // Attempt to open djay via URL scheme (works if djay is installed on Mac/iOS)
-    const launched = attemptDjayLaunch(query);
+    // Open djay website (browsers can't launch desktop apps via URL scheme)
+    window.open('https://www.algoriddim.com/djay-mac','_blank');
 
     if(query){
-      Notify.success(`Opening djay with "${track.title}" by ${track.artist}`);
+      Notify.success(`Navigated to Mix — search "${track.title}" in djay`);
     } else {
-      Notify.info('Opening djay — select a vinyl first to load a track automatically');
+      Notify.info('Opening djay — select a vinyl first to load a track');
     }
-
-    // Fallback to website after short delay if app didn't open
-    if(!launched){
-      const url = query
-        ? `https://www.algoriddim.com/djay-mac#search=${encodeURIComponent(query)}`
-        : 'https://www.algoriddim.com/djay-mac';
-      setTimeout(()=>window.open(url,'_blank'), 300);
-    }
-  }
-
-  function attemptDjayLaunch(query){
-    try{
-      // djay URL scheme — opens the app if installed
-      const scheme = query ? `djay://search?q=${encodeURIComponent(query)}` : 'djay://';
-      window.location.href = scheme;
-      return true;
-    }catch{ return false; }
   }
 
   window.SoundtrackStudio={open,openDjay};
