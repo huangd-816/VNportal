@@ -474,52 +474,12 @@ const DJMix = (() => {
 
 // ── Soundtrack Studio ────────────────────
 const SoundtrackStudio = (() => {
-  const urls={
-    soundtrap: 'https://www.soundtrap.com/studio',
-    logic:     'https://www.apple.com/logic-pro/',
-    garageband:'https://www.apple.com/mac/garageband/',
-  };
-
-  function open(app){
-    if(app==='soundtrap'){
-      const embed=document.getElementById('soundtrapEmbed');
-      if(embed){ embed.classList.toggle('hidden'); }
-    } else {
-      window.open(urls[app],'_blank');
-    }
-  }
-
-  function importFromSoundtrap(){
-    // Can't directly import from Soundtrap iframe due to cross-origin
-    // Guide the user to export and drag-drop
-    Notify.info('Export your track from Soundtrap (File → Export → MP3), then drag it onto Deck A');
-    const input=document.createElement('input');
-    input.type='file'; input.accept='audio/*';
-    input.onchange=e=>{
-      const file=e.target.files[0];
-      if(file&&typeof DJMix!=='undefined'){
-        // Call loadLocalFile on deck A
-        const event=new CustomEvent('loadLocalFileDeck',{detail:{id:'A',file}});
-        window.dispatchEvent(event);
-        Notify.success(`"${file.name}" loaded onto Deck A`);
-      }
-    };
-    input.click();
-  }
-
-  window.SoundtrackStudio={open,importFromSoundtrap};
-  return window.SoundtrackStudio;
-})();
-
-// ── Soundtrack Studio ─────────────────────
-const SoundtrackStudio = (() => {
   function open(app){
     if(app==='soundtrap'){
       const embed=document.getElementById('soundtrapEmbed');
       if(embed){
         embed.classList.toggle('hidden');
         if(!embed.classList.contains('hidden')){
-          // Load lazily
           const iframe=document.getElementById('soundtrapFrame');
           if(iframe&&!iframe.src) iframe.src='https://www.soundtrap.com/studio';
         }
@@ -537,7 +497,6 @@ const SoundtrackStudio = (() => {
     input.type='file'; input.accept='audio/*';
     input.onchange=e=>{
       const file=e.target.files[0]; if(!file) return;
-      // Trigger deck A file load
       const blob=URL.createObjectURL(file);
       if(typeof DJMix!=='undefined') DJMix._loadFile('A',file,blob);
       else Notify.warn('Load the DJ Mix page first');

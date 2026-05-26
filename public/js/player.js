@@ -57,9 +57,7 @@ const Player = (() => {
   }
 
   function onYTError(e) {
-    console.warn('YouTube player error:', e.data);
     showSourceBadge('yt-error');
-    // Try next track
     setTimeout(next, 1000);
   }
 
