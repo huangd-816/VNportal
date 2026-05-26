@@ -29,7 +29,12 @@ const Player = (() => {
   // Called automatically by YouTube API when ready
   window.onYouTubeIframeAPIReady = function () {
     ytReady = true;
-    const container = document.getElementById('ytPlayerContainer');
+    // Player is created lazily on first playYouTube() call to avoid
+    // postMessage origin errors from an idle playerless iframe
+  };
+
+  function ensureYTPlayer() {
+    if (ytPlayer) return;
     ytPlayer = new YT.Player('ytPlayerInner', {
       height: '1', width: '1',
       playerVars: { autoplay: 0, controls: 0 },
@@ -38,7 +43,7 @@ const Player = (() => {
         onError: onYTError,
       }
     });
-  };
+  }
 
   function onYTStateChange(e) {
     // 0 = ended
@@ -122,9 +127,13 @@ const Player = (() => {
     mode = 'youtube';
     localAudio.pause();
     showSourceBadge('youtube');
-    if (!ytReady || !ytPlayer?.loadVideoById) {
-      // API not loaded yet — retry in 1s
+    if (!ytReady) {
       setTimeout(() => playYouTube(videoId), 1000);
+      return;
+    }
+    ensureYTPlayer();
+    if (!ytPlayer?.loadVideoById) {
+      setTimeout(() => playYouTube(videoId), 500);
       return;
     }
     ytPlayer.setVolume(volume * 100);
