@@ -69,13 +69,22 @@ const Auth = (() => {
     const nameEl=document.getElementById('authName');
     if(!btn) return;
     if(currentUser){
-      btn.textContent='';
-      if(avatar){avatar.style.display='flex';avatar.textContent=currentUser.name[0].toUpperCase();}
+      // Hide the bar button — avatar becomes the click target
+      btn.style.display='none';
+      if(avatar){
+        avatar.style.display='flex';
+        if(currentUser.avatar){
+          avatar.innerHTML=`<img src="${esc(currentUser.avatar)}" style="width:100%;height:100%;border-radius:50%;object-fit:cover">`;
+        } else {
+          avatar.textContent=currentUser.name[0].toUpperCase();
+        }
+        avatar.onclick=showProfileMenu;
+      }
       if(nameEl) nameEl.textContent=currentUser.name;
-      btn.onclick=showProfileMenu;
     } else {
-      if(avatar) avatar.style.display='none';
-      btn.textContent='Sign In';
+      btn.style.display='';
+      if(avatar){avatar.style.display='none';avatar.onclick=null;}
+      if(nameEl) nameEl.textContent='';
       btn.onclick=()=>showModal('login');
     }
     const chatName=document.getElementById('chatName');

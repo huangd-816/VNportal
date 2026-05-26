@@ -1379,13 +1379,15 @@ body:has(.player-bar.visible) .main-content{padding-bottom:calc(var(--player-h) 
 }
 .auth-sidebar-btn:hover { border-color: var(--accent); color: var(--accent); }
 .auth-avatar {
-  width: 28px; height: 28px; border-radius: 50%;
+  width: 34px; height: 34px; border-radius: 50%;
   background: var(--accent); color: #000;
   display: flex; align-items: center; justify-content: center;
-  font-family: var(--font-d); font-size: .9rem;
-  flex-shrink: 0; cursor: pointer;
+  font-family: var(--font-d); font-size: 1rem;
+  flex-shrink: 0; cursor: pointer; overflow: hidden;
+  transition: opacity .18s;
 }
-.auth-name { font-size: .65rem; color: var(--text-dim); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.auth-avatar:hover { opacity: .8; }
+.auth-name { font-size: .65rem; color: var(--text-dim); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 120px; }
 
 /* ==========================================
    AUTH MODAL
