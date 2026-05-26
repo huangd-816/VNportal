@@ -10,7 +10,7 @@
 //          Add http://127.0.0.1:4000 as redirect URI
 const OAUTH_CONFIG = {
   google:  { clientId: '48697032427-lrl7d1cghrkni50ovrqsqfvrvnf33kli.apps.googleusercontent.com' },
-  discord: { clientId: '' },  // paste Discord application client ID here
+  discord: { clientId: '1508773910013808660' },
 };
 
 const Auth = (() => {
