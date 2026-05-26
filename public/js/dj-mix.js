@@ -43,6 +43,7 @@ const DJMix = (() => {
   }
 
   window.onSpotifyWebPlaybackSDKReady = function(){
+    if(typeof SpotifyAuth==='undefined'||!SpotifyAuth.isPremium()) return;
     SpotifyAuth.getToken().then(token=>{
       if(!token) return;
       spPlayer = new Spotify.Player({
@@ -68,7 +69,8 @@ const DJMix = (() => {
   };
 
   function init(){
-    loadSpotifySDK();
+    // Load SDK lazily — only if user is already connected as Premium
+    if(typeof SpotifyAuth!=='undefined'&&SpotifyAuth.isPremium()) loadSpotifySDK();
     populateDecks();
     bindControls();
     initDropZones();
@@ -469,7 +471,8 @@ const DJMix = (() => {
     Notify.success(`Deck ${id}: "${name}" imported from Soundtrap`);
   }
   function onShow(){populateDecks();}
-  return{init,onShow,_loadFile};
+  function enableSpotifySDK(){ loadSpotifySDK(); }
+  return{init,onShow,_loadFile,enableSpotifySDK};
 })();
 
 // ── Soundtrack Studio ────────────────────

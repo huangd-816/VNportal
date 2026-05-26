@@ -119,7 +119,7 @@ const SpotifyAuth = (() => {
       headers:{Authorization:`Bearer ${token}`,'Content-Type':'application/json',...(opts.headers||{})},
     });
     if(res.status===204||res.status===202) return {};
-    if(!res.ok){ console.warn('Spotify API',path,res.status); return null; }
+    if(!res.ok){ return null; }
     return res.json();
   }
 
@@ -137,8 +137,12 @@ const SpotifyAuth = (() => {
         provider:'spotify',
       });
     }
-    if(isPremiumUser) Notify.success(`Spotify ✦ Premium connected — ${p.display_name}`);
-    else Notify.info(`Spotify connected (Free) — ${p.display_name} · 30s previews only`);
+    if(isPremiumUser){
+      Notify.success(`Spotify ✦ Premium connected — ${p.display_name}`);
+      if(typeof DJMix!=='undefined') DJMix.enableSpotifySDK();
+    } else {
+      Notify.info(`Spotify connected (Free) — ${p.display_name} · 30s previews only`);
+    }
   }
 
   function updateUI(){
