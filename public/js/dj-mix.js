@@ -288,6 +288,31 @@ const DJMix = (() => {
     return [];
   }
 
+  const scrubbing={A:false,B:false};
+
+  function addScrubListeners(bar,id,audio){
+    function scrubTo(clientX){
+      const r=bar.getBoundingClientRect();
+      const pct=Math.max(0,Math.min(1,(clientX-r.left)/r.width));
+      audio.currentTime=pct*(audio.duration||0);
+      const fill=document.getElementById(`djFill${id}`);
+      const time=document.getElementById(`djTime${id}`);
+      if(fill) fill.style.width=(pct*100)+'%';
+      if(time) time.textContent=fmt(audio.currentTime)+(audio.duration?' / '+fmt(audio.duration):'');
+    }
+    // Mouse
+    bar.addEventListener('mousedown',e=>{
+      scrubbing[id]=true; bar.classList.add('scrubbing');
+      scrubTo(e.clientX); e.preventDefault();
+    });
+    document.addEventListener('mousemove',e=>{ if(scrubbing[id]) scrubTo(e.clientX); });
+    document.addEventListener('mouseup',()=>{ if(scrubbing[id]){ scrubbing[id]=false; bar.classList.remove('scrubbing'); } });
+    // Touch
+    bar.addEventListener('touchstart',e=>{ scrubbing[id]=true; scrubTo(e.touches[0].clientX); },{passive:true});
+    bar.addEventListener('touchmove',e=>{ if(scrubbing[id]) scrubTo(e.touches[0].clientX); },{passive:true});
+    bar.addEventListener('touchend',()=>{ scrubbing[id]=false; });
+  }
+
   function setLocalAudio(id, url, name){
     ensureCtx();
     const d=decks[id];
@@ -316,16 +341,16 @@ const DJMix = (() => {
         wrap.appendChild(prog);
       }
       audio.addEventListener('timeupdate',()=>{
+        if(scrubbing[id]) return;
         const pct=audio.currentTime/(audio.duration||1);
         const fill=document.getElementById(`djFill${id}`);
         const time=document.getElementById(`djTime${id}`);
         if(fill) fill.style.width=(pct*100)+'%';
         if(time) time.textContent=fmt(audio.currentTime)+(audio.duration?' / '+fmt(audio.duration):'');
       });
-      document.getElementById(`djProg${id}`)?.addEventListener('click',e=>{
-        const r=e.currentTarget.getBoundingClientRect();
-        audio.currentTime=(e.clientX-r.left)/r.width*(audio.duration||0);
-      });
+      // Drag-to-scrub
+      const bar=document.getElementById(`djProg${id}`);
+      if(bar) addScrubListeners(bar,id,audio);
     }
   }
 
@@ -376,11 +401,6 @@ const DJMix = (() => {
         await SpotifyAuth.pause(spDeviceId); d.playing=false; updateUI(id,false);
       } else {
         if(!d.uri){ Notify.warn('No Spotify track selected'); return; }
-        // Spotify SDK plays one stream — mark the other deck as stopped
-        const other=id==='A'?'B':'A';
-        if(decks[other].mode==='spotify'&&decks[other].playing){
-          decks[other].playing=false; updateUI(other,false);
-        }
         activeDeck=id;
         await SpotifyAuth.play(spDeviceId,[d.uri]);
         d.playing=true; updateUI(id,true);
@@ -496,22 +516,14 @@ const SoundtrackStudio = (() => {
 
     if(track && typeof App!=='undefined') App.navigate('mix');
 
-    // Detect if the app opened by listening for the window losing focus
-    let appOpened = false;
-    const onBlur = () => { appOpened = true; };
-    window.addEventListener('blur', onBlur, {once: true});
-
-    // Launch djay via URL scheme — Chrome shows "Open djay?" if app is installed
-    window.location.href = query ? `djay://search?q=${encodeURIComponent(query)}` : 'djay://';
-
-    // Fall back to website if app didn't launch within 1.5s
-    setTimeout(() => {
-      window.removeEventListener('blur', onBlur);
-      if(!appOpened){
-        window.open('https://www.algoriddim.com/djay-mac','_blank');
-        Notify.info('djay not found — download it from the site that opened');
-      }
-    }, 1500);
+    // Use hidden <a> click — triggers URL scheme without navigating the page
+    const scheme = query ? `djay://search?q=${encodeURIComponent(query)}` : 'djay://';
+    const a = document.createElement('a');
+    a.href = scheme;
+    a.style.display = 'none';
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(() => a.remove(), 200);
 
     if(query) Notify.success(`Opening djay — search "${track.title}" by ${track.artist}`);
     else Notify.info('Opening djay — select a vinyl to auto-load a track');

@@ -2039,12 +2039,14 @@ body:has(.player-bar.visible) .main-content{padding-bottom:calc(var(--player-h) 
 }
 .dj-loaded-progress { display: flex; align-items: center; gap: .5rem; margin-bottom: .5rem; }
 .dj-progress-bar {
-  flex: 1; height: 4px; background: var(--border);
-  border-radius: 2px; cursor: pointer; position: relative;
+  flex: 1; height: 6px; background: var(--border);
+  border-radius: 3px; cursor: grab; position: relative; user-select: none;
 }
+.dj-progress-bar.scrubbing { cursor: grabbing; }
+.dj-progress-bar.scrubbing .dj-progress-fill { transition: none; }
 .dj-progress-fill {
-  height: 100%; background: var(--accent); border-radius: 2px;
-  width: 0%; transition: width .3s linear; pointer-events: none;
+  height: 100%; background: var(--accent); border-radius: 3px;
+  width: 0%; transition: width .25s linear; pointer-events: none;
 }
 .dj-time { font-size: .6rem; color: var(--text-dim); flex-shrink: 0; min-width: 60px; }
 .dj-change-btn {
