@@ -58,11 +58,14 @@ const DJMix = (() => {
       spPlayer.addListener('not_ready', ()=>{ spReady=false; spDeviceId=null; });
       spPlayer.addListener('player_state_changed', state=>{
         if(!state) return;
-        const paused=state.paused;
-        if(activeDeck){
-          decks[activeDeck].playing=!paused;
-          updateUI(activeDeck,!paused);
-        }
+        // Sync all Spotify decks — SDK has one stream so only one can be playing
+        ['A','B'].forEach(id=>{
+          if(decks[id].mode==='spotify'){
+            const isActive=activeDeck===id;
+            const playing=isActive&&!state.paused;
+            if(decks[id].playing!==playing){ decks[id].playing=playing; updateUI(id,playing); }
+          }
+        });
       });
       spPlayer.connect();
     });
@@ -373,6 +376,11 @@ const DJMix = (() => {
         await SpotifyAuth.pause(spDeviceId); d.playing=false; updateUI(id,false);
       } else {
         if(!d.uri){ Notify.warn('No Spotify track selected'); return; }
+        // Spotify SDK plays one stream — mark the other deck as stopped
+        const other=id==='A'?'B':'A';
+        if(decks[other].mode==='spotify'&&decks[other].playing){
+          decks[other].playing=false; updateUI(other,false);
+        }
         activeDeck=id;
         await SpotifyAuth.play(spDeviceId,[d.uri]);
         d.playing=true; updateUI(id,true);
