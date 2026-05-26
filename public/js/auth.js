@@ -1,8 +1,18 @@
 // ============================================
 // VNportal — Auth System
-// Email works now. Google/Discord need hosting.
-// Spotify handled separately via SpotifyAuth.
 // ============================================
+
+// ── OAuth credentials ──────────────────────
+// Google:  console.cloud.google.com → APIs & Services → Credentials
+//          Create OAuth 2.0 Client ID (Web), add http://127.0.0.1:4000
+//          as Authorized JavaScript Origin
+// Discord: discord.com/developers → New App → OAuth2
+//          Add http://127.0.0.1:4000 as redirect URI
+const OAUTH_CONFIG = {
+  google:  { clientId: '' },  // paste Google OAuth client ID here
+  discord: { clientId: '' },  // paste Discord application client ID here
+};
+
 const Auth = (() => {
   const USERS_KEY   = 'vn_users';
   const SESSION_KEY = 'vn_session';
@@ -169,22 +179,120 @@ const Auth = (() => {
       else Notify.warn('Spotify module not loaded');
       return;
     }
-    const names={google:'Google',discord:'Discord'};
+    if(provider==='google') return loginGoogle();
+    if(provider==='discord') return loginDiscord();
+  }
+
+  // ── Google Sign-In (GIS popup, no backend needed) ──
+  function loginGoogle(){
+    const cid=OAUTH_CONFIG.google.clientId;
+    if(!cid){ showOAuthSetup('google'); return; }
+    closeModal();
+    const load=()=>{
+      google.accounts.id.initialize({
+        client_id:cid,
+        callback:(resp)=>{
+          try{
+            const payload=JSON.parse(atob(resp.credential.split('.')[1]));
+            setSession({id:'google_'+payload.sub,name:payload.name,email:payload.email,avatar:payload.picture||null,provider:'google'});
+            Notify.success(`Welcome, ${payload.name}!`);
+          }catch{ Notify.error('Google sign-in failed'); }
+        },
+        ux_mode:'popup',
+      });
+      google.accounts.id.prompt((note)=>{
+        if(note.isNotDisplayed()||note.isSkippedMoment()){
+          // Fallback to renderButton approach
+          const wrap=document.createElement('div');
+          wrap.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.7);display:flex;align-items:center;justify-content:center;z-index:13000';
+          wrap.innerHTML=`<div style="background:var(--surface);padding:2rem;border:1px solid var(--border);min-width:280px;text-align:center">
+            <p style="color:var(--text-dim);font-size:.8rem;margin-bottom:1rem">Sign in with Google</p>
+            <div id="gsiBtn"></div>
+            <button class="btn-secondary" style="margin-top:1rem;font-size:.75rem" onclick="this.closest('[style]').remove()">Cancel</button>
+          </div>`;
+          document.body.appendChild(wrap);
+          wrap.addEventListener('click',e=>{if(e.target===wrap)wrap.remove();});
+          google.accounts.id.renderButton(document.getElementById('gsiBtn'),{theme:'filled_black',size:'large',text:'signin_with'});
+        }
+      });
+    };
+    if(window.google?.accounts?.id){ load(); return; }
+    const s=document.createElement('script');
+    s.src='https://accounts.google.com/gsi/client';
+    s.onload=load;
+    s.onerror=()=>Notify.error('Failed to load Google Sign-In');
+    document.head.appendChild(s);
+  }
+
+  // ── Discord Sign-In (implicit flow, no backend needed) ──
+  function loginDiscord(){
+    const cid=OAUTH_CONFIG.discord.clientId;
+    if(!cid){ showOAuthSetup('discord'); return; }
+    closeModal();
+    localStorage.setItem('discord_oauth_pending','1');
+    const params=new URLSearchParams({
+      client_id:cid,
+      redirect_uri:window.location.origin||'http://127.0.0.1:4000',
+      response_type:'token',
+      scope:'identify email',
+    });
+    window.location.href=`https://discord.com/api/oauth2/authorize?${params}`;
+  }
+
+  async function handleDiscordCallback(){
+    const hash=new URLSearchParams(window.location.hash.replace('#',''));
+    const token=hash.get('access_token');
+    if(!token) return;
+    window.history.replaceState({},'','/');
+    localStorage.removeItem('discord_oauth_pending');
+    try{
+      const res=await fetch('https://discord.com/api/users/@me',{headers:{Authorization:`Bearer ${token}`}});
+      const u=await res.json();
+      const avatar=u.avatar?`https://cdn.discordapp.com/avatars/${u.id}/${u.avatar}.png`:null;
+      setSession({id:'discord_'+u.id,name:u.global_name||u.username,email:u.email||'',avatar,provider:'discord'});
+      Notify.success(`Welcome, ${u.global_name||u.username}!`);
+    }catch{ Notify.error('Discord sign-in failed'); }
+  }
+
+  // ── Setup prompt when client ID is missing ──
+  function showOAuthSetup(provider){
+    const cfg={
+      google:{
+        name:'Google',
+        url:'console.cloud.google.com',
+        steps:'1. Create a project → APIs &amp; Services → Credentials<br>2. Create OAuth 2.0 Client ID (Web application)<br>3. Add <code>http://127.0.0.1:4000</code> as Authorized JavaScript Origin<br>4. Copy the Client ID',
+        field:'OAUTH_CONFIG.google.clientId',
+      },
+      discord:{
+        name:'Discord',
+        url:'discord.com/developers/applications',
+        steps:'1. New Application → OAuth2 tab<br>2. Add <code>http://127.0.0.1:4000</code> as Redirect URI<br>3. Copy the Client ID (not secret)',
+        field:'OAUTH_CONFIG.discord.clientId',
+      },
+    }[provider];
     const msg=document.createElement('div');
     msg.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.8);display:flex;align-items:center;justify-content:center;z-index:13000';
     msg.innerHTML=`
-      <div style="background:var(--surface);border:1px solid var(--border);width:340px;max-width:92vw;padding:2rem;position:relative">
+      <div style="background:var(--surface);border:1px solid var(--border);width:380px;max-width:94vw;padding:2rem;position:relative">
         <button onclick="this.closest('[style]').remove()" style="position:absolute;top:.75rem;right:.75rem;background:none;border:none;color:var(--text-dim);cursor:pointer;font-size:1rem">✕</button>
-        <div style="font-size:1.3rem;font-family:var(--font-d);color:var(--accent);margin-bottom:.75rem">${names[provider]} Sign-In</div>
-        <p style="font-size:.78rem;color:var(--text-dim);line-height:1.7;margin-bottom:1.25rem">
-          ${names[provider]} OAuth requires a <b style="color:var(--text)">hosted domain with a backend</b> — it's a security requirement from Google/Discord, not something we can work around locally.<br><br>
-          <b style="color:var(--text)">When VNportal is deployed publicly</b>, ${names[provider]} login activates automatically. For now, email sign-up works fully.
-        </p>
-        <button class="btn-primary" style="width:100%" onclick="this.closest('[style]').remove()">Got it — use email</button>
+        <div style="font-size:1.2rem;font-family:var(--font-d);color:var(--accent);margin-bottom:.75rem">Set up ${cfg.name} Sign-In</div>
+        <p style="font-size:.76rem;color:var(--text-dim);line-height:1.8;margin-bottom:1rem">${cfg.steps}</p>
+        <input id="oauthClientIdInput" placeholder="${cfg.name} Client ID" class="auth-input" style="margin-bottom:.75rem"/>
+        <button class="btn-primary" style="width:100%" onclick="
+          const v=document.getElementById('oauthClientIdInput').value.trim();
+          if(!v){return;}
+          OAUTH_CONFIG.${provider}.clientId=v;
+          localStorage.setItem('oauth_${provider}_cid',v);
+          this.closest('[style]').remove();
+          Auth._handleOAuth('${provider}');
+        ">Save &amp; Sign In</button>
       </div>
     `;
     document.body.appendChild(msg);
     msg.addEventListener('click',e=>{if(e.target===msg)msg.remove();});
+    // Pre-fill if previously saved
+    const saved=localStorage.getItem('oauth_'+provider+'_cid');
+    if(saved) document.getElementById('oauthClientIdInput').value=saved;
   }
 
   function closeModal(){ const m=document.getElementById('authModal'); if(m) m.style.display='none'; }
@@ -218,6 +326,17 @@ const Auth = (() => {
   }
 
   async function init(){
+    // Restore saved OAuth client IDs
+    const gCid=localStorage.getItem('oauth_google_cid');
+    const dCid=localStorage.getItem('oauth_discord_cid');
+    if(gCid) OAUTH_CONFIG.google.clientId=gCid;
+    if(dCid) OAUTH_CONFIG.discord.clientId=dCid;
+
+    // Handle Discord implicit-flow callback (token in URL hash)
+    if(window.location.hash.includes('access_token')){
+      await handleDiscordCallback(); return;
+    }
+
     const saved=localStorage.getItem(SESSION_KEY);
     if(saved) try{ currentUser=JSON.parse(saved); }catch{}
     updateUI();
@@ -225,6 +344,6 @@ const Auth = (() => {
 
   function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
 
-  const api={init,login,signup,logout,getUser,isLoggedIn,showModal,_logout:logout,_editProfile:editProfile};
+  const api={init,login,signup,logout,getUser,isLoggedIn,showModal,_logout:logout,_editProfile:editProfile,_handleOAuth:handleOAuth};
   window.Auth=api; return api;
 })();
