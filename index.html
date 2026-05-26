@@ -34,6 +34,7 @@
       <li><a href="#" class="nav-item" data-page="mix"><span class="nav-icon">◑</span> DJ Mix</a></li>
       <li><a href="#" class="nav-item" data-page="games"><span class="nav-icon">◐</span> Games</a></li>
       <li><a href="#" class="nav-item" data-page="popular"><span class="nav-icon">◆</span> Workshop</a></li>
+      <li><a href="#" class="nav-item" data-page="discussion"><span class="nav-icon">◎</span> Discussion</a></li>
     </ul>
 
     <!-- AUTH BUTTON -->
@@ -323,6 +324,19 @@
         <div class="dj-light"></div><div class="dj-light"></div><div class="dj-light"></div>
       </div>
 
+      <!-- AI PANEL -->
+      <div class="djai-panel">
+        <div class="djai-header">
+          <div class="djai-tabs">
+            <button class="djai-tab active" data-tab="suggest">◈ AI Suggest</button>
+            <button class="djai-tab" data-tab="analyze">◉ AI Analyze</button>
+          </div>
+          <button class="djai-refresh" id="djaiRefreshBtn" title="Refresh">↺</button>
+        </div>
+        <div id="djaiSuggest" class="djai-content"></div>
+        <div id="djaiAnalyze" class="djai-content" style="display:none"></div>
+      </div>
+
       <!-- SOUNDTRACK STUDIO -->
       <div class="soundtrack-section">
         <div class="soundtrack-header">
@@ -507,6 +521,52 @@
       </div>
     </section>
 
+    <!-- DISCUSSION -->
+    <section class="page" id="page-discussion">
+      <div class="page-header">
+        <h1 class="page-title">Vinyl <em>Discussion</em></h1>
+        <p class="page-sub">Share discoveries, talk music</p>
+      </div>
+      <div class="disc-tabs-bar">
+        <button class="disc-tab active" data-tab="community">◈ Community</button>
+        <button class="disc-tab" data-tab="world">◎ World</button>
+      </div>
+
+      <!-- Community -->
+      <div id="discCommunity" class="disc-panel">
+        <div class="disc-filters">
+          <select id="discFGenre"><option value="">All genres</option></select>
+          <select id="discFArtist"><option value="">All artists</option></select>
+          <select id="discFAlbum"><option value="">All albums</option></select>
+          <input id="discFRegion" placeholder="Filter by region..." maxlength="30"/>
+        </div>
+        <div class="disc-posts" id="discCommunityPosts"></div>
+        <div class="disc-compose">
+          <div class="disc-compose-tags">
+            <select id="discPostGenre"><option value="">Genre tag</option></select>
+            <select id="discPostArtist"><option value="">Artist tag</option></select>
+            <select id="discPostAlbum"><option value="">Album tag</option></select>
+            <input id="discPostRegion" placeholder="Your region" maxlength="30"/>
+          </div>
+          <div class="disc-compose-row">
+            <textarea id="discPostText" class="disc-textarea" placeholder="Share a thought about music… (Ctrl+Enter to post)" maxlength="300" rows="2"></textarea>
+            <button class="btn-primary" id="discPostSend">Post</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- World -->
+      <div id="discWorld" class="disc-panel" style="display:none">
+        <div class="disc-posts" id="discWorldPosts"></div>
+        <div class="disc-compose">
+          <div class="disc-compose-row">
+            <textarea id="discWorldText" class="disc-textarea" placeholder="Share with the world… (Ctrl+Enter to post)" maxlength="300" rows="2"></textarea>
+            <button class="btn-primary" id="discWorldSend">Post</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
   </main>
 
   <!-- HIDDEN YOUTUBE DECK PLAYERS -->
@@ -586,8 +646,9 @@
   <script src="public/js/track-match.js"></script>
   <script src="public/js/workshop.js"></script>
   <script src="public/js/spotify-auth.js"></script>
-<script src="public/js/dj-mix.js"></script>
-
+  <script src="public/js/dj-mix.js"></script>
+  <script src="public/js/dj-ai.js"></script>
+  <script src="public/js/discussion.js"></script>
   <script src="public/js/app.js"></script>
 </body>
 </html>

@@ -15,8 +15,8 @@ const DJMix = (() => {
   let audioCtx=null, masterGain=null;
 
   const decks = {
-    A: { mode:null, audio:null, gainNode:null, playing:false, trackName:'', uri:null, blobUrl:null },
-    B: { mode:null, audio:null, gainNode:null, playing:false, trackName:'', uri:null, blobUrl:null },
+    A: { mode:null, audio:null, gainNode:null, playing:false, trackName:'', uri:null, blobUrl:null, genre:null, artist:null, key:null },
+    B: { mode:null, audio:null, gainNode:null, playing:false, trackName:'', uri:null, blobUrl:null, genre:null, artist:null, key:null },
   };
   let crossfade=0.5, tapTimes=[], animFrame=null;
   let activeDeck = null; // which deck is using Spotify (only 1 at a time)
@@ -174,6 +174,9 @@ const DJMix = (() => {
     document.getElementById(`deck${id}TitleDisp`).textContent=track.title;
     document.getElementById(`deck${id}ArtistDisp`).textContent=track.artist;
     decks[id].trackName=`${track.title} — ${track.artist}`;
+    decks[id].genre=vinyl.genre||null;
+    decks[id].artist=track.artist||null;
+    decks[id].key=value;
 
     const wrap=document.getElementById(`deck${id}SpotifyEmbed`);
     if(wrap) wrap.innerHTML=`<div style="padding:.75rem;text-align:center;color:var(--text-dim);font-size:.72rem">◎ Searching...</div>`;
@@ -536,7 +539,18 @@ const DJMix = (() => {
     populateDecks(true);
   }
   function enableSpotifySDK(){ loadSpotifySDK(); }
-  return{init,onShow,_loadFile,enableSpotifySDK};
+  function getDecksState(){
+    return {
+      A:{key:decks.A.key,trackName:decks.A.trackName,artist:decks.A.artist,genre:decks.A.genre,playing:decks.A.playing,mode:decks.A.mode},
+      B:{key:decks.B.key,trackName:decks.B.trackName,artist:decks.B.artist,genre:decks.B.genre,playing:decks.B.playing,mode:decks.B.mode},
+    };
+  }
+  function loadTrackToDeck(deckId, key){
+    const sel=document.getElementById(`deck${deckId}Select`);
+    if(sel) sel.value=key;
+    loadFromVinyl(deckId,key);
+  }
+  return{init,onShow,_loadFile,enableSpotifySDK,getDecksState,loadTrackToDeck};
 })();
 
 // ── Soundtrack Studio ────────────────────

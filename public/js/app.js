@@ -10,7 +10,8 @@ const App = (() => {
     if(page==='exhibit') Exhibit.render();
     if(page==='cover')   Cover.onShow();
     if(page==='popular') Workshop.onShow();
-    if(page==='mix'&&typeof DJMix!=='undefined') DJMix.onShow();
+    if(page==='mix'&&typeof DJMix!=='undefined'){ DJMix.onShow(); if(typeof DJAIUI!=='undefined') DJAIUI.init(); }
+    if(page==='discussion'&&typeof Discussion!=='undefined') Discussion.onShow();
   }
 
   function init() {
@@ -32,6 +33,7 @@ const App = (() => {
     if(typeof DJMix!=='undefined')       DJMix.init();
     if(typeof Player!=='undefined')      Player.initUI();
     if(typeof SpotifyAuth!=='undefined') SpotifyAuth.init();
+    if(typeof Discussion!=='undefined')  Discussion.init();
 
     // Make new game cards active (remove "coming soon" styling)
     document.getElementById('sleevePuzzleCard')?.classList.remove('coming');
