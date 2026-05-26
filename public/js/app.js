@@ -31,7 +31,7 @@ const App = (() => {
     if(typeof Auth!=='undefined')        Auth.init();
     if(typeof DJMix!=='undefined')       DJMix.init();
     if(typeof Player!=='undefined')      Player.initUI();
-    if(typeof Spotify!=='undefined')     Spotify.init();
+    if(typeof SpotifyAuth!=='undefined') SpotifyAuth.init();
 
     // Make new game cards active (remove "coming soon" styling)
     document.getElementById('sleevePuzzleCard')?.classList.remove('coming');
