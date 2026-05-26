@@ -483,17 +483,27 @@ const SoundtrackStudio = (() => {
     const track = vinyl?.tracks?.[0];
     const query = track ? `${track.title} ${track.artist}`.trim() : '';
 
-    // Navigate to DJ Mix page with the current track
     if(track && typeof App!=='undefined') App.navigate('mix');
 
-    // Open djay website (browsers can't launch desktop apps via URL scheme)
-    window.open('https://www.algoriddim.com/djay-mac','_blank');
+    // Detect if the app opened by listening for the window losing focus
+    let appOpened = false;
+    const onBlur = () => { appOpened = true; };
+    window.addEventListener('blur', onBlur, {once: true});
 
-    if(query){
-      Notify.success(`Navigated to Mix — search "${track.title}" in djay`);
-    } else {
-      Notify.info('Opening djay — select a vinyl first to load a track');
-    }
+    // Launch djay via URL scheme — Chrome shows "Open djay?" if app is installed
+    window.location.href = query ? `djay://search?q=${encodeURIComponent(query)}` : 'djay://';
+
+    // Fall back to website if app didn't launch within 1.5s
+    setTimeout(() => {
+      window.removeEventListener('blur', onBlur);
+      if(!appOpened){
+        window.open('https://www.algoriddim.com/djay-mac','_blank');
+        Notify.info('djay not found — download it from the site that opened');
+      }
+    }, 1500);
+
+    if(query) Notify.success(`Opening djay — search "${track.title}" by ${track.artist}`);
+    else Notify.info('Opening djay — select a vinyl to auto-load a track');
   }
 
   window.SoundtrackStudio={open,openDjay};
