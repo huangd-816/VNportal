@@ -227,8 +227,15 @@ const DJMix = (() => {
       t.name.toLowerCase().includes(original.title.toLowerCase())
     )||tracks[0];
 
+    const premium = SpotifyAuth.isPremium();
     decks[id].uri  = best.uri;
-    decks[id].mode = 'spotify';
+
+    // Free users: load preview_url as local audio so both decks can play simultaneously
+    if(!premium && best.preview_url){
+      setLocalAudio(id, best.preview_url, best.name);
+    } else if(premium){
+      decks[id].mode = 'spotify';
+    }
 
     if(wrap) wrap.innerHTML=`
       <div class="dj-result-card dj-sp-card">
@@ -238,13 +245,13 @@ const DJMix = (() => {
             <div class="dj-result-name">${esc(best.name)}</div>
             <div class="dj-result-artist">${esc(best.artists?.map(a=>a.name).join(', '))}</div>
             <div class="dj-result-badge" style="color:#1DB954">
-              ${SpotifyAuth.isPremium()?'Spotify · Full track':'Spotify · 30s preview'}
+              ${premium?'Spotify · Full track':'Spotify · 30s preview'}
             </div>
           </div>
         </div>
         ${tracks.length>1?`<div class="dj-result-alts">
           ${tracks.slice(1,4).map(t=>`
-            <button class="dj-alt-btn" data-uri="${t.uri}"
+            <button class="dj-alt-btn" data-uri="${t.uri}" data-preview="${t.preview_url||''}"
               data-name="${esc(t.name)}" data-artist="${esc(t.artists?.map(a=>a.name).join(', '))}">
               ${esc(t.name)} — ${esc(t.artists?.[0]?.name||'')}
             </button>`).join('')}
@@ -256,11 +263,13 @@ const DJMix = (() => {
       </div>
     `;
     wrap?.querySelectorAll('.dj-alt-btn').forEach(btn=>{
+      decks[id].uri=btn.dataset.uri;
       btn.addEventListener('click',()=>{
-        decks[id].uri=btn.dataset.uri;
         document.getElementById(`deck${id}TitleDisp`).textContent=btn.dataset.name;
         document.getElementById(`deck${id}ArtistDisp`).textContent=btn.dataset.artist;
         decks[id].trackName=`${btn.dataset.name} — ${btn.dataset.artist}`;
+        if(!premium && btn.dataset.preview) setLocalAudio(id, btn.dataset.preview, btn.dataset.name);
+        else decks[id].uri=btn.dataset.uri;
         Notify.info(`Deck ${id}: "${btn.dataset.name}" selected`);
       });
     });
