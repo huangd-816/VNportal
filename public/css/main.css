@@ -91,6 +91,11 @@ body{background:var(--bg);color:var(--text);font-family:var(--font-m);display:fl
 .spotify-btn.connected{border-color:var(--border);color:var(--text-dim)}
 .spotify-icon{font-size:1rem}
 
+/* APPLE MUSIC BUTTON */
+.apple-music-btn{border-color:#FC3C44;color:#FC3C44}
+.apple-music-btn:hover{background:rgba(252,60,68,.1)}
+.apple-music-btn.connected{border-color:var(--border);color:var(--text-dim)}
+
 /* NOW PLAYING */
 .sidebar-now-playing{
   padding:1rem 1.25rem;border-top:1px solid var(--border);
