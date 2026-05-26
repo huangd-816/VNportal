@@ -9,7 +9,7 @@
 // Discord: discord.com/developers → New App → OAuth2
 //          Add http://127.0.0.1:4000 as redirect URI
 const OAUTH_CONFIG = {
-  google:  { clientId: '' },  // paste Google OAuth client ID here
+  google:  { clientId: '48697032427-lrl7d1cghrkni50ovrqsqfvrvnf33kli.apps.googleusercontent.com' },
   discord: { clientId: '' },  // paste Discord application client ID here
 };
 
