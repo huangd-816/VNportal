@@ -80,7 +80,7 @@ const DJMix = (() => {
     startVisualizer();
   }
 
-  function populateDecks(){
+  function populateDecks(autoLoad=false){
     const{vinyls}=Store.get();
     ['A','B'].forEach(id=>{
       const sel=document.getElementById(`deck${id}Select`); if(!sel) return;
@@ -92,7 +92,7 @@ const DJMix = (() => {
         sel.appendChild(o);
       }));
     });
-    autoLoadDecks(vinyls);
+    if(autoLoad) autoLoadDecks(vinyls);
   }
 
   function autoLoadDecks(vinyls){
@@ -525,7 +525,7 @@ const DJMix = (() => {
     Notify.success(`Deck ${id}: "${name}" imported from Soundtrap`);
   }
   function onShow(){
-    populateDecks();
+    populateDecks(true);
   }
   function enableSpotifySDK(){ loadSpotifySDK(); }
   return{init,onShow,_loadFile,enableSpotifySDK};
