@@ -207,6 +207,7 @@ const DJMix = (() => {
     }
 
     // 4. Nothing found
+    if(wrap) wrap.style.display='';
     if(wrap) wrap.innerHTML=`
       <div class="dj-result-card" style="border-color:var(--accent2)">
         <div style="font-size:.72rem;color:var(--accent2);margin-bottom:.4rem">Not found in streaming libraries</div>
@@ -226,17 +227,19 @@ const DJMix = (() => {
   }
 
   function showSpotifyResults(id, tracks, original, wrap){
+    // Prefer a track with a preview_url so both decks can play simultaneously
     const best=tracks.find(t=>
-      t.name.toLowerCase().includes(original.title.toLowerCase())
-    )||tracks[0];
+      t.preview_url && t.name.toLowerCase().includes(original.title.toLowerCase())
+    )||tracks.find(t=>t.preview_url)||tracks[0];
 
-    const premium = SpotifyAuth.isPremium();
-    decks[id].uri  = best.uri;
+    decks[id].uri = best.uri;
+    if(wrap) wrap.style.display='';
 
-    // Free users: load preview_url as local audio so both decks can play simultaneously
-    if(!premium && best.preview_url){
+    // Always use preview_url as local audio so both decks can play at the same time.
+    // Fall back to Spotify SDK (Premium, one stream) only when no preview exists.
+    if(best.preview_url){
       setLocalAudio(id, best.preview_url, best.name);
-    } else if(premium){
+    } else if(SpotifyAuth.isPremium()){
       decks[id].mode = 'spotify';
     }
 
@@ -248,7 +251,7 @@ const DJMix = (() => {
             <div class="dj-result-name">${esc(best.name)}</div>
             <div class="dj-result-artist">${esc(best.artists?.map(a=>a.name).join(', '))}</div>
             <div class="dj-result-badge" style="color:#1DB954">
-              ${premium?'Spotify · Full track':'Spotify · 30s preview'}
+              ${best.preview_url?'Spotify · 30s preview':'Spotify · Full track (SDK)'}
             </div>
           </div>
         </div>
@@ -266,13 +269,15 @@ const DJMix = (() => {
       </div>
     `;
     wrap?.querySelectorAll('.dj-alt-btn').forEach(btn=>{
-      decks[id].uri=btn.dataset.uri;
       btn.addEventListener('click',()=>{
         document.getElementById(`deck${id}TitleDisp`).textContent=btn.dataset.name;
         document.getElementById(`deck${id}ArtistDisp`).textContent=btn.dataset.artist;
         decks[id].trackName=`${btn.dataset.name} — ${btn.dataset.artist}`;
-        if(!premium && btn.dataset.preview) setLocalAudio(id, btn.dataset.preview, btn.dataset.name);
-        else decks[id].uri=btn.dataset.uri;
+        if(btn.dataset.preview){
+          setLocalAudio(id, btn.dataset.preview, btn.dataset.name);
+        } else if(SpotifyAuth.isPremium()){
+          decks[id].mode='spotify'; decks[id].uri=btn.dataset.uri;
+        }
         Notify.info(`Deck ${id}: "${btn.dataset.name}" selected`);
       });
     });
@@ -445,7 +450,7 @@ const DJMix = (() => {
       }
     } else if(d.mode==='local'&&d.audio){
       ensureCtx();
-      if(audioCtx.state==='suspended') audioCtx.resume();
+      if(audioCtx.state==='suspended') await audioCtx.resume();
       if(d.playing){ d.audio.pause(); d.playing=false; updateUI(id,false); }
       else{ d.audio.play().then(()=>{ d.playing=true; updateUI(id,true); applyCrossfade(); }).catch(()=>Notify.warn('Click play again')); }
     } else {

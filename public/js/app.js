@@ -57,3 +57,12 @@ const App = (() => {
   return{init,navigate};
 })();
 document.addEventListener('DOMContentLoaded', App.init);
+
+// Suppress unhandled SyntaxErrors from Spotify SDK's internal eval'd workers
+// (they try to JSON.parse binary license/auth tokens — harmless but noisy)
+window.addEventListener('unhandledrejection', e => {
+  if(e.reason instanceof SyntaxError && e.reason.stack &&
+     /at <anonymous>:1:/.test(e.reason.stack)){
+    e.preventDefault();
+  }
+});
